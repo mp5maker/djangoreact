@@ -5,9 +5,9 @@ const concat = require('gulp-concat');
 gulp.task('default', ['librarycss', 'css', 'libraryjs', 'js',]);
 
 gulp.task('css', () => {
-    gulp.src('src/app/sass/materialize.scss')
-        .pipe(concat('main.css'))
+    gulp.src('src/app/sass/**/**/*.scss')
         .pipe(sass().on('error', sass.logError))
+        .pipe(concat('main.css'))
         .pipe(gulp.dest('src/static'));
 });
 
@@ -41,6 +41,6 @@ gulp.task('libraryjs', () => {
 });
 
 gulp.task('watch', ['css', 'js'], () => {
-    gulp.watch('src/app/sass/materialize.scss', ['css']);
+    gulp.watch('src/app/sass/**/**/*.scss', ['css']);
     gulp.watch('app/react/**/*.js', ['js']);
 });
