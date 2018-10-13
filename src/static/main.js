@@ -93,7 +93,7 @@
 /*! no static exports found */
 /***/ (function(module, exports) {
 
-eval("\n\n//# sourceURL=webpack:///./src/app/controllers/main.js?");
+eval("// Use Create Element\nhelloWorld = React.createElement('h4', {\n  className: \"title\"\n}, \"Hello World\");\nReactDOM.render(helloWorld, document.getElementById('hello-world'));\n\n//# sourceURL=webpack:///./src/app/controllers/main.js?");
 
 /***/ })
 

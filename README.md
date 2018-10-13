@@ -114,8 +114,50 @@ npm install --save-dev gulp gulp-sass gulp-concat
 * video-container &nbsp; **[For iframes]** 
 
 ### React Setup ###
-1. Node JS Should be installed
-2. react, react-dom, react-scripts
+*React Requirements*
 ```bash
-npx create-react-app djangoreact
+npm install --save-dev @babel/cli @babel/core @babel/preset-env 
+npm install --save-dev @babel/preset-env @babel/preset-react
+npm install --save-dev babel-loader prop-types
+npm install --save-dev react react-dom 
+npm install --save-dev webpack webpack-cli webpack-dev-server
+```
+
+***
+
+webpack.config.js
+```js
+const path = require('path');
+module.exports = {
+    entry: "./src/app/controllers/main.js",
+    output: {
+        path: path.resolve(__dirname, 'src/static'),
+        filename: "main.js"
+    },
+    module: {
+        rules: [
+            {
+                test: /\.js?$/,
+                exclude: /node_modules/,
+                use: [
+                    {
+                        loader: 'babel-loader',
+                    }
+                ]
+            }
+        ]
+    }
+};
+```
+
+***
+
+.babelrc
+```js
+{
+   "presets": [
+        "@babel/preset-env",
+        "@babel/preset-react"
+    ]
+}
 ```
