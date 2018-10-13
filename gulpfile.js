@@ -2,7 +2,8 @@ const gulp = require('gulp');
 const sass = require('gulp-sass');
 const concat = require('gulp-concat');
 
-gulp.task('default', ['librarycss', 'css', 'libraryjs', 'js',]);
+// gulp.task('default', ['librarycss', 'css', 'libraryjs', 'js',]);
+gulp.task('default', ['librarycss', 'css', 'libraryjs']);
 
 gulp.task('css', () => {
     gulp.src('src/app/sass/**/**/*.scss')
@@ -21,11 +22,11 @@ gulp.task('librarycss', () => {
         .pipe(gulp.dest('src/static'));
 });
 
-gulp.task('js', () => {
-    gulp.src('src/app/djangoreact/build/**/*.js')
-        .pipe(concat('main.js'))
-        .pipe(gulp.dest('src/static'));
-});
+// gulp.task('js', () => {
+//     gulp.src('src/app/djangoreact/build/**/*.js')
+//         .pipe(concat('main.js'))
+//         .pipe(gulp.dest('src/static'));
+// });
 
 libraryjs = [
     "node_modules/jquery/dist/jquery.js",
@@ -40,7 +41,11 @@ gulp.task('libraryjs', () => {
         .pipe(gulp.dest('src/static'));
 });
 
-gulp.task('watch', ['css', 'js'], () => {
+// gulp.task('watch', ['css', 'js'], () => {
+//     gulp.watch('src/app/sass/**/**/*.scss', ['css']);
+//     gulp.watch('app/react/**/*.js', ['js']);
+// });
+
+gulp.task('watch', ['css'], () => {
     gulp.watch('src/app/sass/**/**/*.scss', ['css']);
-    gulp.watch('app/react/**/*.js', ['js']);
 });
