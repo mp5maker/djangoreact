@@ -22,7 +22,7 @@ gulp.task('librarycss', () => {
 });
 
 gulp.task('js', () => {
-    gulp.src('src/app/djangoreact/dist/**/*.js')
+    gulp.src('src/app/djangoreact/build/**/*.js')
         .pipe(concat('main.js'))
         .pipe(gulp.dest('src/static'));
 });

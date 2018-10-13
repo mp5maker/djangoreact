@@ -3,6 +3,7 @@
 
 *Django Requirement*
 ```bash
+pip install virtualenvwrapper
 mkvirtualenv djangoreact
 pip install Django==1.11
 pip install djangorestframework
