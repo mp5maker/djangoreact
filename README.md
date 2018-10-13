@@ -111,3 +111,10 @@ npm install --save-dev gulp gulp-sass gulp-concat
 * responsive-img
 * responsive-video  &nbsp; **[For Video Tag]**
 * video-container &nbsp; **[For iframes]** 
+
+### React Setup ###
+1. Node JS Should be installed
+2. react, react-dom, react-scripts
+```bash
+npx create-react-app djangoreact
+```
