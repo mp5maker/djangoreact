@@ -55,50 +55,59 @@ npm install --save-dev gulp gulp-sass gulp-concat
 ```
 
 ### Materialize ### 
-1. container
-2. row
-3. col s7 m9 l12  **[S: Small, M: Medium, Large: Large]**
-4. col s5 push-s7, col s7 pull s-5, col s6 offset-s6 **[Push, Pull, Offset]**
-5. card-panel *[Color Names]* &nbsp; *[Shades of Color]* &nbsp; **[Background Colors]**
-6. [Color Names]-text &nbsp; text-*[Shades of Color]* &nbsp; **[Text Colors]**
+* container
+* row
+* col s7 m9 l12  **[S: Small, M: Medium, Large: Large]**
+* col s5 push-s7, col s7 pull s-5, col s6 offset-s6 **[Push, Pull, Offset]**
+* card-panel *[Color Names]* &nbsp; *[Shades of Color]* &nbsp; **[Background Colors]**
+* [Color Names]-text &nbsp; text-*[Shades of Color]* &nbsp; **[Text Colors]**
+    * **[Color Names]**
+        * red
+        * pink
+        * purple
+        * deep-purple
+        * indigo
+        * blue
+        * light-blue
+        * cyan
+        * teal
+        * green
+        * light-green
+        * lime
+        * yellow
+        * amber
+        * orange
+        * deep-orange
+        * brown
+        * grey
+        * blue-grey
+        * black
+        * white
+        * transparent
+    **[Shades of Color]**
+        * lighten-1, lighten-2, lighten-3, lighten-4, lighten-5
+        * darken-1, darken-2, darken-3, darkent-4, darkent-5
+        * accent-1, accent-2, accent-3, accent-4, accent-5
+    ***
 
-**[Color Names]**
-```bash
-a. red
-b. pink
-c. purple
-d. deep-purple
-e. indigo
-f. blue
-g. light-blue
-h. cyan
-i. teal
-j. green
-j. light-green
-k. lime
-l. yellow
-m. amber
-n. orange
-o. deep-orange
-p. brown
-q. grey
-r. blue-grey
-s. black
-t. white
-u. transparent
-```
-
-*** 
-
-**[Shades of Color]**
-```bash
-a. lighten-1, lighten-2, lighten-3, lighten-4, lighten-5
-b. darken-1, darken-2, darken-3, darkent-4, darkent-5
-c. accent-1, accent-2, accent-3, accent-4, accent-5
-```
-
-***
-
-7. Helpers
-
-
+* Helpers
+* valign-wrapper [Vertically Align]
+* left-align, right-align, center-align [Text Alighnments]
+* left, right [Floats]
+* [Hiding/Showing Contents]
+    * hide 
+    * hide-on-small-only 
+    * hide-on-med-only
+    * hide-on-med-and-up 
+    * hide-on-large-only
+    * show-on-small
+    * show-on-medium
+    * show-on-large
+    * show-on-medium-up
+    * show-on-medium-and-down
+* truncate
+* hoverable
+* browser-default **[Revert Back to Browser Settings]**
+* responsive-img
+* responsive-video  &nbsp; **[For Video Tag]**
+* video-container &nbsp; **[For iframes]** 
