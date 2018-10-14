@@ -11,7 +11,7 @@
 */
 
 import { DjangoSidebarTitle, DjangoContentTitle } from './Common/App'
-import PostList  from './Post/PostList'
+import PostList  from './Post/Post'
 
 ReactDOM.render(
     <DjangoSidebarTitle />,
