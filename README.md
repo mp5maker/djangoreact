@@ -53,6 +53,7 @@ npm init -y
 npm install --save jquery popper.js materialize-css
 npm install --save angular angular-animate ui-router [Optional Backup Angular JS 1.0]
 npm install --save-dev gulp gulp-sass gulp-concat
+npm install --save-dev axios
 ```
 
 ### Materialize ### 
@@ -112,6 +113,8 @@ npm install --save-dev gulp gulp-sass gulp-concat
 * responsive-img
 * responsive-video  &nbsp; **[For Video Tag]**
 * video-container &nbsp; **[For iframes]** 
+* z-depth-1, z-depth-2, z-depth-3, z-depth-4, z-depth-5 &nbsp; **[Box Shadow]**
+* striped, highlight, centered, responsive-table &nbsp; **[Table]**
 
 ### React Setup ###
 *React Requirements*

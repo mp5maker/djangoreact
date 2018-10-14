@@ -5,3 +5,13 @@ body, html {
     padding: 0;
     border: 0;
 }
+
+.row{
+    &.top {
+       .col {
+           &.s3, &.s9 {
+                margin-top: 0;
+           }
+       }
+    }
+}

@@ -6531,3 +6531,6 @@ body, html {
   margin: 0;
   padding: 0;
   border: 0; }
+
+.row.top .col.s3, .row.top .col.s9 {
+  margin-top: 0; }

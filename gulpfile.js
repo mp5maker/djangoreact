@@ -33,6 +33,7 @@ libraryjs = [
     "node_modules/popper.js/dist/umd/popper.js",
     "node_modules/materialize-css/dist/js/materialize.js",
     "node_modules/lodash/dist/lodash.js",
+    "node_modules/axios/dist/axios.js",
     "node_modules/react/umd/react.development.js",
     "node_modules/react-dom/umd/react-dom.development.js"
 ];
