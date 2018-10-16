@@ -35,7 +35,9 @@ libraryjs = [
     "node_modules/lodash/dist/lodash.js",
     "node_modules/axios/dist/axios.js",
     "node_modules/react/umd/react.development.js",
-    "node_modules/react-dom/umd/react-dom.development.js"
+    "node_modules/react-dom/umd/react-dom.development.js",
+    "node_modules/react-router/umd/react-router.js",
+    "node_modules/react-router-dom/umd/react-router-dom.js",
 ];
 
 gulp.task('libraryjs', () => {
