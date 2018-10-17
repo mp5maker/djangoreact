@@ -8,7 +8,15 @@ class PostList extends Component {
         this.state = {
             data: [],
             loading: true,
-            error: false
+            error: false,
+        }
+    }
+
+    componentDidUpdate(prevProps) {
+        if (this.props.reverseOrder !== prevProps.reverseOrder) {
+            this.setState({
+                data: this.state.data.reverse()
+            })
         }
     }
 

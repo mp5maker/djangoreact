@@ -88,7 +88,7 @@ npm install --save-dev axios
         * transparent
     **[Shades of Color]**
         * lighten-1, lighten-2, lighten-3, lighten-4, lighten-5
-        * darken-1, darken-2, darken-3, darkent-4, darkent-5
+        * darken-1, darken-2, darken-3, darken-4, darken-5
         * accent-1, accent-2, accent-3, accent-4, accent-5
     ***
 
@@ -115,6 +115,7 @@ npm install --save-dev axios
 * video-container &nbsp; **[For iframes]** 
 * z-depth-1, z-depth-2, z-depth-3, z-depth-4, z-depth-5 &nbsp; **[Box Shadow]**
 * striped, highlight, centered, responsive-table &nbsp; **[Table]**
+* btn **[Button]**
 
 ### React Setup ###
 *React Requirements*

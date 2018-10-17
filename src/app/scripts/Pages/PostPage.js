@@ -2,9 +2,33 @@ import { Component } from "react"
 import { PostList, PostRetrieve } from "../Post/Post"
 
 class PostListPage extends Component {
+    constructor(props) {
+        super(props)
+        this.state = {
+            reverseOrder: true,
+        }
+        this.reverseToggle = this.reverseToggle.bind(this)
+    }
+
+    reverseToggle(event) {
+        event.preventDefault()
+        this.setState({
+            reverseOrder: !this.state.reverseOrder
+        })
+        console.log(this.state.reverseOrder)
+    }
+
     render() {
+        const buttonClassName = "btn darken-5 grey-text text-lighten-2 waves-light waves-effect hoverable " + (this.state.reverseOrder ? ' indigo' : ' deep-purple')
         return (
-            <PostList />
+            <div>
+                <div>
+                    <button className={buttonClassName} onClick={this.reverseToggle}>
+                        {this.state.reverseOrder ? 'Reverse' : 'Back'}
+                    </button> &nbsp;
+                </div>
+                <PostList reverseOrder={this.state.reverseOrder}/>
+            </div>
         )
     }
 }
