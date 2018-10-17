@@ -1,4 +1,6 @@
-class DjangoSidebarTitle extends React.Component {
+import { Component } from 'react'
+
+class DjangoSidebarTitle extends Component {
     render() {
         return (
             <h4 className="teal-text text-darken-1">
@@ -10,7 +12,7 @@ class DjangoSidebarTitle extends React.Component {
     }
 }
 
-class DjangoContentTitle extends React.Component {
+class DjangoContentTitle extends Component {
     render() {
         return (
             <h4 className="white-text">

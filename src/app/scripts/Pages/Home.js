@@ -1,6 +1,7 @@
+import { Component } from "react"
 import PostList from "../Post/Post"
 
-class Home extends React.Component {
+class Home extends Component {
     render() {
         return (
             <PostList />

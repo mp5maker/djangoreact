@@ -1,7 +1,8 @@
+import { Component } from 'react'
 import Sidebar from "../Layouts/Sidebar"
 import Content from "../Layouts/Content"
 
-class App extends React.Component {
+class App extends Component {
     render() {
         return (
             <div>

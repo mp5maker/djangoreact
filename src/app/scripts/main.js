@@ -1,6 +1,7 @@
 import App from './App/App'
+import { render } from "react-dom"
 
-ReactDOM.render(
+render(
     <App />,
     document.getElementById('app')
 )

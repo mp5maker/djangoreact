@@ -1,6 +1,7 @@
+import { Component } from "react"
 import ApiHelper from "../Factories/ApiHelper"
 
-class PostList extends React.Component {
+class PostList extends Component {
     constructor(props) {
         super(props);
         this.state = {
@@ -40,7 +41,7 @@ class PostList extends React.Component {
     }
 }
 
-class PostCollection extends React.Component {
+class PostCollection extends Component {
     render() {
         const posts = this.props.collection
         return (
@@ -55,7 +56,7 @@ class PostCollection extends React.Component {
     }
 }
 
-class PostDetail extends React.Component {
+class PostDetail extends Component {
     constructor(props) {
         super(props)
         this.postDetail = this.postDetail.bind(this)

@@ -1,4 +1,5 @@
-class Contact extends React.Component {
+import { Component } from "react"
+class Contact extends Component {
     render() {
         return (
             <div> Contact </div>
