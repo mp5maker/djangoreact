@@ -1,9 +1,10 @@
-import { BrowserRouter, Route, Switch } from 'react-router-dom'
 import { Component } from 'react'
+import { BrowserRouter, Route, Switch } from 'react-router-dom'
 import { DjangoContentTitle } from "../Common/Common"
-import Home from '../Pages/Home'
-import About from '../Pages/About'
-import Contact from '../Pages/Contact'
+import HomePage from '../Pages/HomePage'
+import AboutPage from '../Pages/AboutPage'
+import ContactPage from '../Pages/ContactPage'
+import { PostListPage, PostRetrievePage } from '../Pages/PostPage'
 
 class Content extends Component {
     render() {
@@ -12,9 +13,11 @@ class Content extends Component {
                 <DjangoContentTitle />
                 <BrowserRouter>
                     <Switch>
-                        <Route exact path='/' component={Home} />
-                        <Route path='/about' component={About} />
-                        <Route path='/contact' component={Contact} />
+                        <Route exact path='/' component={HomePage} />
+                        <Route path='/about' component={AboutPage} />
+                        <Route path='/contact' component={ContactPage} />
+                        <Route path='/post' component={PostListPage} />
+                        <Route path='/post-detail/:id' component={PostRetrievePage} />
                     </Switch>
                 </BrowserRouter>
             </div>

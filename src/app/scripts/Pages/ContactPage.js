@@ -1,5 +1,5 @@
 import { Component } from "react"
-class Contact extends Component {
+class ContactPage extends Component {
     render() {
         return (
             <div> Contact </div>
@@ -7,4 +7,4 @@ class Contact extends Component {
     }
 }
 
-export default Contact
+export default ContactPage
