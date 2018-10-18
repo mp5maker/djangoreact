@@ -1,6 +1,7 @@
 import { Component } from 'react'
 import Sidebar from "../Layouts/Sidebar"
 import Content from "../Layouts/Content"
+import Footer from "../Layouts/Footer"
 
 class App extends Component {
     render() {
@@ -8,6 +9,7 @@ class App extends Component {
             <div>
                 <Sidebar />
                 <Content />
+                <Footer />
             </div>
         )
     }

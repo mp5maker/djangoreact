@@ -7,11 +7,33 @@ body, html {
 }
 
 .row{
+    margin-bottom: 0;
     &.top {
        .col {
-           &.s3, &.s9 {
+           &[class*='s'] {
                 margin-top: 0;
+                margin-bottom: 0;
            }
        }
+    }
+    footer {
+        padding-top: 1rem !important;
+        padding-bottom: 1rem !important;
+    }
+
+    .hidden {
+        display: none;
+    }
+}
+
+// Creating Fonts Mixins
+@mixin create-fonts($i) {
+    font-size: #{$i}px !important;
+}
+
+// Creating Loops to create classes
+@for $i from 1 through 100 {
+    .font-size-#{$i}{
+        @include create-fonts($i);
     }
 }

@@ -116,6 +116,7 @@ npm install --save-dev axios
 * z-depth-1, z-depth-2, z-depth-3, z-depth-4, z-depth-5 &nbsp; **[Box Shadow]**
 * striped, highlight, centered, responsive-table &nbsp; **[Table]**
 * btn **[Button]**
+* .fixed-action-btn>(a.btn-floating.btn-large.red>i)+(ul>li>a.btn-floating) **[Fixed Action Button]** 
 
 ### React Setup ###
 *React Requirements*
