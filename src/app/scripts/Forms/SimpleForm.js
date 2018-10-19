@@ -48,11 +48,13 @@ class SimpleForm extends Component {
             const response = Object.assign({}, error.response.data)
             if (response) {
                 const errorList = {}
-                if (response.title) {
-                    errorList.postTitle = response.title[0]
-                }
                 if (response.content) {
                     errorList.postDescription = response.content[0]
+                    this.inputPostDescriptionRef.current.focus()
+                }
+                if (response.title) {
+                    errorList.postTitle = response.title[0]
+                    this.inputPostTitleRef.current.focus()
                 }
                 this.setState({
                     confirmationErrorMessage: "Please, check the field errors!",
@@ -60,7 +62,6 @@ class SimpleForm extends Component {
                     error: errorList,
                     isSuccess: false,
                 })
-                this.inputPostTitleRef.current.focus()
             }
         })
     }
@@ -98,7 +99,7 @@ class SimpleForm extends Component {
                     <form onSubmit={this.handleSubmit} className="col s12">
                         <div className="row margin-yaxis-12">
                             <div className="col s6">
-                                <h6 className="white-text">Simple Form</h6>
+                                <h6 className="white-text">Create Post Form</h6>
                             </div>
                         </div>
                         <div className="row margin-yaxis-12">
