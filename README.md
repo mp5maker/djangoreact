@@ -115,7 +115,7 @@ npm install --save-dev axios
 * video-container &nbsp; **[For iframes]** 
 * z-depth-1, z-depth-2, z-depth-3, z-depth-4, z-depth-5 &nbsp; **[Box Shadow]**
 * striped, highlight, centered, responsive-table &nbsp; **[Table]**
-* btn **[Button]**
+* btn, waves-effect, waves-light **[Button]**
 * .fixed-action-btn>(a.btn-floating.btn-large.red>i)+(ul>li>a.btn-floating) **[Fixed Action Button]** 
 
 ### React Setup ###
@@ -166,3 +166,9 @@ module.exports = {
     ]
 }
 ```
+
+### Differences between PUT and PATCH ###
+If we want to change the first name then we send a put request for Update
+{ "first": "Michael", "last": "Angelo" }
+With PUT :: To change just the "first" we need to include both "first" and "last"
+With PATCH :: We only the send the data that is needed to change. i.e only "first"

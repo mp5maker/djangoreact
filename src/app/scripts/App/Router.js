@@ -3,7 +3,7 @@ import { BrowserRouter, Route, Switch } from 'react-router-dom'
 import HomePage from '../Pages/HomePage'
 import AboutPage from '../Pages/AboutPage'
 import ContactPage from '../Pages/ContactPage'
-import { PostListPage, PostRetrievePage } from '../Pages/PostPage'
+import { PostListPage, PostRetrievePage, PostCreatePage } from '../Pages/PostPage'
 
 class Router extends Component {
     render() {
@@ -15,6 +15,7 @@ class Router extends Component {
                     <Route path='/contact' component={ContactPage} />
                     <Route path='/post' component={PostListPage} />
                     <Route path='/post-detail/:id' component={PostRetrievePage} />
+                    <Route path='/post-create' component={PostCreatePage} />
                 </Switch>
             </BrowserRouter>
         )

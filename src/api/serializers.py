@@ -29,6 +29,15 @@ class UserSerializer(ModelSerializer):
             'date_joined'
         )
 
+class PostBasicSerializer(ModelSerializer):
+    class Meta:
+        model = Post
+        fields = (
+            'author',
+            'title',
+            'content'
+        )
+
 class PostSerializer(ModelSerializer):
     author = SerializerMethodField()
     author_url = HyperlinkedIdentityField(

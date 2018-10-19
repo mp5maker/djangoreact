@@ -26,14 +26,57 @@ body, html {
     }
 }
 
+.pointer {
+    cursor: pointer;
+}
 // Creating Fonts Mixins
 @mixin create-fonts($i) {
     font-size: #{$i}px !important;
 }
 
-// Creating Loops to create classes
+// Creating Loops to create font-size classes
 @for $i from 1 through 100 {
     .font-size-#{$i}{
         @include create-fonts($i);
+    }
+}
+
+// Create margin mixins
+@mixin create-margin($i, $side) {
+    @if ($side == 'yaxis') {
+        margin-top: #{$i}px;
+        margin-bottom: #{$i}px;
+    } @else if ($side == 'xaxis') {
+        margin-left: #{$i}px;
+        margin-right: #{$i}px;
+    } @else if ($side == 'all') {
+        margin: #{$i}px;
+    } @else {
+        margin-#{$side}: #{$i}px;
+    }
+}
+
+// Creating Loops to create margin classes
+@for $i from 1 through 100 {
+    .margin-yaxis-#{$i}{
+        @include create-margin($i, 'yaxis');
+    }
+    .margin-xaxis-#{$i}{
+        @include create-margin($i, 'xaxis');
+    }
+    .margin-all-#{$i}{
+        @include create-margin($i, 'all');
+    }
+    .margin-left-#{$i}{
+        @include create-margin($i, 'left');
+    }
+    .margin-right-#{$i}{
+        @include create-margin($i, 'right');
+    }
+    .margin-top-#{$i}{
+        @include create-margin($i, 'top');
+    }
+    .margin-bottom-#{$i}{
+        @include create-margin($i, 'bottom');
     }
 }

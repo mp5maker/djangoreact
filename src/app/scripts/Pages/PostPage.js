@@ -1,5 +1,6 @@
 import { Component } from "react"
 import { PostList, PostRetrieve } from "../Post/Post"
+import SimpleForm from "../Forms/SimpleForm"
 
 class PostListPage extends Component {
     constructor(props) {
@@ -44,4 +45,15 @@ class PostRetrievePage extends Component {
     }
 }
 
-export { PostListPage, PostRetrievePage }
+class PostCreatePage extends Component {
+    constructor(props) {
+        super(props)
+    }
+    render() {
+        return (
+            <SimpleForm />
+        )
+    }
+}
+
+export { PostListPage, PostRetrievePage, PostCreatePage }
