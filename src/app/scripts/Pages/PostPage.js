@@ -87,7 +87,7 @@ class PostUpdatePage extends Component {
             title: data.postTitle ? data.postTitle : "",
             content: data.postDescription ? data.postDescription : ""
         }
-        ApiHelper.updatePatchPost(this.state.postId, sendData)
+        ApiHelper.updatePutPost(this.state.postId, sendData)
         .then((response) => {
             if (response) {
                 this.setState({
@@ -100,7 +100,6 @@ class PostUpdatePage extends Component {
         })
         .catch((error) => {
             const response = error.response.data
-            console.log(response)
             if (response) {
                 const errorList = {}
                 if (response.content) {
@@ -142,7 +141,10 @@ class PostUpdatePage extends Component {
         .catch((error) => {
             const errorList = error.response.data
             if (errorList) {
-                console.log(errorList)
+                this.setState({
+                    postTitle: errorList.title[0],
+                    postDescription: errorList.content[0]
+                })
             } 
         }) 
     }

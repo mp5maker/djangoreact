@@ -16,7 +16,7 @@ class MyTextInput extends Component {
         }
         this.state = {
             notEmpty: this.props.inputValue.length ? true : false,
-            error: {}
+            error: this.props.error
         }
     }
 
@@ -73,6 +73,8 @@ class MyTextInput extends Component {
      */
     render() {
         const props = this.props
+        const { error } = this.state
+        console.log(error)
         return (
             <div className={props.rowClass ? props.rowClass : "row margin-yaxis-12"}>
                 <div className={props.colClass ? props.colClass : "input-field col s6"}>
@@ -83,7 +85,7 @@ class MyTextInput extends Component {
                         onChange={this.inputChange}
                         onFocus={this.inputFocus}
                         onBlur={this.inputBlur}
-                        className={props.inputClass ? props.inputClass : "white-text validate" + (this.state.error ? "invalid" : "")}
+                        className={props.inputClass ? props.inputClass : "white-text validate " + (error ? "invalid" : "")}
                         name={props.name ? props.name : ""}
                         defaultValue={props.inputValue ? props.inputValue : ""}
                         id={props.uniqueID ? props.uniqueID : ""}
@@ -95,7 +97,7 @@ class MyTextInput extends Component {
                     </label>
                     <span 
                         className={props.validationClass ? props.validationClass : "helper-text white-text margin-bottom-12"}
-                        data-error={this.state.error ? this.state.error : ""}
+                        data-error={error ? error : ""}
                         data-success={props.success ? props.success : ""}>
                         {props.helperText ? props.helperText : ""}
                     </span>
@@ -121,7 +123,8 @@ class MyTextArea extends Component {
         }
         this.state = {
             notEmpty: this.props.inputValue.length ? true : false,
-            inputValue: this.props.inputValue ? this.props.inputValue : "" 
+            inputValue: this.props.inputValue ? this.props.inputValue : "",
+            error: this.props.error
         }
     }
 
@@ -172,10 +175,16 @@ class MyTextArea extends Component {
                 inputValue: this.props.inputValue
             })
         }
+        if (this.props.error !== prevProps.error) {
+            this.setState({
+                error: this.props.error
+            })
+        }
     }
 
     render() {
         const props = this.props
+        const { error } = this.state
         return (
             <div className={props.rowClass ? props.rowClass : "row margin-yaxis-12"}>
                 <div className={props.colClass ? props.colClass : "input-field col s6"}>
@@ -185,7 +194,7 @@ class MyTextArea extends Component {
                         onChange={this.inputChange}
                         onFocus={this.inputFocus}
                         onBlur={this.inputBlur}
-                        className={props.inputClass ? props.inputClass : "materialize-textarea white-text validate" + (props.error ? "invalid" : "")}
+                        className={props.inputClass ? props.inputClass : "materialize-textarea white-text validate " + (error ? "invalid" : "")}
                         value={this.state.inputValue}
                         name={props.name ? props.name : ""}
                         id={props.uniqueID ? props.uniqueID : ""}
@@ -198,7 +207,7 @@ class MyTextArea extends Component {
                     </label>
                     <span 
                         className={props.validationClass ? props.validationClass : "helper-text white-text margin-bottom-12"}
-                        data-error={props.error ? props.error : ""}
+                        data-error={error ? error : ""}
                         data-success={props.success ? props.success : ""}>
                         {props.helperText ? props.helperText : ""}
                     </span>
