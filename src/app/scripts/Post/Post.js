@@ -139,11 +139,11 @@ class PostDetail extends Component {
                     </div>
                     <div className="card-action">
                         <p>
-                            <a onClick={this.authorDetail} className="teal-text text-darken-5">
-                                Author : &nbsp;
-                                <strong>
-                                    {post.author}
-                                </strong>
+                            <a onClick={this.authorDetail} className="btn btn-floating btn-large font-size-1 indigo lighten-2 waves-effect waves-light margin-right-6">
+                                {post.author}
+                            </a>
+                            <a href={"/post-update/" + post.id} className="btn purple lighten-2 waves-effect waves-light margin-right-6">
+                                Update
                             </a>
                         </p>
                     </div>

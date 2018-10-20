@@ -25,6 +25,11 @@ class PostListPage extends Component {
         const buttonClassName = "btn darken-5 grey-text text-lighten-2 waves-light waves-effect hoverable " + (this.state.reverseOrder ? ' indigo' : ' deep-purple')
         return (
             <div>
+                <h4 className="white-text">
+                    <span>
+                        Post List
+                    </span>
+                </h4>
                 <div>
                     <button className={buttonClassName} onClick={this.reverseToggle}>
                         {this.state.reverseOrder ? 'Reverse' : 'Back'}
@@ -42,7 +47,14 @@ class PostRetrievePage extends Component {
     }
     render() {
         return (
-            <PostRetrieve detailId={this.props.match.params.id} />
+            <div>
+                <h4 className="white-text">
+                    <span>
+                        Post Details
+                    </span>
+                </h4>
+                <PostRetrieve detailId={this.props.match.params.id} />
+            </div>
         )
     }
 }
@@ -53,7 +65,14 @@ class PostCreatePage extends Component {
     }
     render() {
         return (
-            <SimpleForm />
+            <div>
+                <h4 className="white-text">
+                    <span>
+                        Post Create
+                    </span>
+                </h4>
+                <SimpleForm />
+            </div>
         )
     }
 }
@@ -152,6 +171,11 @@ class PostUpdatePage extends Component {
     render() {
         return (
             <div>
+                <h4 className="white-text">
+                    <span>
+                        Post Update
+                    </span>
+                </h4>
                 <div className="row card grey darken-3 margin-yaxis-12">
                     <form onSubmit={this.handleSubmit} className="col s12">
                         <div className="row margin-yaxis-12">

@@ -5,12 +5,7 @@ import FloatingActionButton from '../Common/FloatingActionButton'
 class Content extends Component {
     render() {
         return(
-            <div className="col s9 card-panel teal darken-1 hoverable">
-                <h4 className="white-text">
-                    <span>
-                        Contents
-                    </span>
-                </h4>
+            <div className="col s10 card-panel teal darken-1 hoverable overflow-y-auto height-100">
                 <Router />
                 <FloatingActionButton />
             </div>

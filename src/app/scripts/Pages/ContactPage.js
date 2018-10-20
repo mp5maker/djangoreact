@@ -2,7 +2,11 @@ import { Component } from "react"
 class ContactPage extends Component {
     render() {
         return (
-            <div> Contact </div>
+            <h4 className="white-text">
+                <span>
+                    Contact
+                </span>
+            </h4>
         )
     }
 }

@@ -29,6 +29,11 @@ body, html {
 .pointer {
     cursor: pointer;
 }
+
+.overflow-y-auto {
+    overflow-y: auto;
+}
+
 // Creating Fonts Mixins
 @mixin create-fonts($i) {
     font-size: #{$i}px !important;
@@ -78,5 +83,25 @@ body, html {
     }
     .margin-bottom-#{$i}{
         @include create-margin($i, 'bottom');
+    }
+}
+
+// Create Width mixins
+@mixin create-width($i){
+    width: #{$i}px;
+}
+
+// Create Height mixins
+@mixin create-height($i){
+    height: #{$i}px;
+}
+
+// Creating Loops to create width and height classes
+@for $i from 1 through 100 {
+    .width-#{$i}{
+        @include create-width($i*10)
+    }
+    .height-#{$i}{
+        @include create-height($i*10)
     }
 }

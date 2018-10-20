@@ -156,6 +156,11 @@ class ImageUploadPage extends Component {
         const { imageSource, cropImageSource, cropOptions, base64Image, pixelCrop, simpleImageSource } = this.state
         return (
             <div>
+                <h4 className="white-text">
+                    <span>
+                        Image Upload
+                    </span>
+                </h4>
                 <div className="row">
                     <div className="col s12">
                         <div className="row margin-yaxis-12">
