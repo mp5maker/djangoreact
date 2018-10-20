@@ -1,13 +1,19 @@
 import { Component } from "react"
 
 class HomePage extends Component {
+    constructor(props) {
+        super(props)
+    }
+
     render() {
         return (
-            <h4 className="white-text">
-                <span>
-                    Home
-                </span>
-            </h4>
+            <div>
+                <h4 className="white-text">
+                    <span>
+                        Home
+                    </span>
+                </h4>
+            </div>
         )
     }
 }

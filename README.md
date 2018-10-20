@@ -133,6 +133,7 @@ npm install --save react-router-native
 npm install --save prop-types
 npm install --save react-dropzone
 npm install --save react-image-crop
+npm install --save react-markdown
 ```
 
 ***

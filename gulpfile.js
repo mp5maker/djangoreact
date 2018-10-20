@@ -42,6 +42,7 @@ libraryjs = [
     "node_modules/prop-types/prop-types.js",
     "node_modules/react-dropzone/dist/index.js",
     "node_modules/react-image-crop/dist/ReactCrop.js",
+    "node_modules/react-markdown/umd/react-markdown.js",
 ];
 
 gulp.task('libraryjs', () => {
