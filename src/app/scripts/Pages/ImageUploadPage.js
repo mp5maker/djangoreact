@@ -9,6 +9,8 @@ class ImageUploadPage extends Component {
         this.handleOnCropChange = this.handleOnCropChange.bind(this)
         this.handleOnCropComplete = this.handleOnCropComplete.bind(this)
         this.handleImageLoaded = this.handleImageLoaded.bind(this)
+        this.handleDownloadImage = this.handleDownloadImage.bind(this)
+        this.handleSimpleFileSelect = this.handleSimpleFileSelect.bind(this)
         this.imageSize = 50 * 1024
         this.acceptedFileTypes = ['image/x-png', 'image/png', 'image/jpg', 'image/jpeg', 'image/gif']
         this.state = {
@@ -16,7 +18,11 @@ class ImageUploadPage extends Component {
             cropImageSource: "",
             cropOptions: {
                 aspect: 1/1
-            }
+            },
+            croppedImage: "",
+            pixelCrop: "",
+            base64Image: "",
+            simpleImageSource: null,
         }
     }
 
@@ -63,10 +69,62 @@ class ImageUploadPage extends Component {
 
     handleImageLoaded(image) {
         console.log(image)
+        this.setState({
+            croppedImage: image
+        })
     }
     
     handleOnCropComplete(crop, pixelCrop) {
-        console.log(crop, pixelCrop)
+        console.log(crop)
+        console.log(pixelCrop)
+        this.setState({
+            pixelCrop: pixelCrop
+        })
+       
+    }
+
+    getCroppedImage(image, pixelCrop) {
+        const canvas = document.createElement('canvas');
+        canvas.width = pixelCrop.width
+        canvas.height = pixelCrop.height
+        const ctx = canvas.getContext('2d')
+        ctx.drawImage(
+            image,
+            pixelCrop.x,
+            pixelCrop.y,
+            pixelCrop.width,
+            pixelCrop.height,
+            0,
+            0,
+            pixelCrop.width,
+            pixelCrop.height
+        );
+        this.setState({
+            base64Image: canvas.toDataURL('image/jpeg')
+        })
+    }
+
+    handleSimpleFileSelect(event) {
+        event.preventDefault()
+        const files = event.target.files[0]
+        console.log(files)
+        if (files) {
+            const reader = new FileReader()
+            reader.addEventListener("load", () => {
+                this.setState({
+                    simpleImageSource: reader.result
+                })
+            }, false)
+            reader.readAsDataURL(files)
+        }
+    }
+
+    handleDownloadImage() {
+        var link = document.createElement('a');
+        link.href = this.state.base64Image;
+        link.download = 'Download.jpg';
+        document.body.appendChild(link);
+        link.click();
     }
 
     componentDidUpdate(prevProps, prevState) {
@@ -75,10 +133,27 @@ class ImageUploadPage extends Component {
                 cropImageSource: this.state.imageSource,
             })
         }
+        if (this.state.croppedImage !== prevState.croppedImage) {
+            this.setState({
+                croppedImage: this.state.croppedImage
+            })
+            this.getCroppedImage(this.state.croppedImage, this.state.pixelCrop)
+        }
+        if (this.state.pixelCrop !== prevState.pixelCrop) {
+            this.setState({
+                pixelCrop: this.state.pixelCrop
+            })
+            this.getCroppedImage(this.state.croppedImage, this.state.pixelCrop)
+        }
+        if (this.state.simpleImageSource !== prevState.simpleImageSource) {
+            this.setState({
+                simpleImageSource: this.state.simpleImageSource
+            })
+        }
     }
 
     render() {
-        const { imageSource, cropImageSource, cropOptions } = this.state
+        const { imageSource, cropImageSource, cropOptions, base64Image, pixelCrop, simpleImageSource } = this.state
         return (
             <div>
                 <div className="row">
@@ -113,6 +188,21 @@ class ImageUploadPage extends Component {
                                     onComplete={this.handleOnCropComplete}
                                     onChange={this.handleOnCropChange}/>
                             </div>
+                            <div className="col s2">
+                                <div>
+                                    {base64Image !== "" ? <img src={base64Image} width={pixelCrop.width} height={pixelCrop.height} alt="Preview of the image" /> : ""}
+                                </div>
+                                <div>
+                                    {base64Image !== "" ?
+                                        <a 
+                                            download
+                                            onClick={this.handleDownloadImage}
+                                            className="btn indigo waves-effect waves-light">
+                                            Download!
+                                        </a> 
+                                        : ""}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -145,10 +235,23 @@ class ImageUploadPage extends Component {
                             <div className="file-field input-field col s12">
                                 <div className="btn grey lighten-1 black-text waves-effect waves-light">
                                     <span>Browse</span>
-                                    <input type="file" />
+                                    <input 
+                                        type="file" 
+                                        accept={this.acceptedFileTypes} 
+                                        onChange={this.handleSimpleFileSelect} 
+                                        multiple={false}/>
                                 </div>
                                 <div className="file-path-wrapper">
                                     <input className="file-path validate" type="text" placeholder="Upload your File"/>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="row margin-yaxis-12">
+                            <div className="col s2">
+                                <div className="card">
+                                    <div className="card-image">
+                                        {simpleImageSource !== null ? <img src={simpleImageSource} width="200" height="200" alt="Preview of the simple image" /> : ""}
+                                    </div>
                                 </div>
                             </div>
                         </div>
