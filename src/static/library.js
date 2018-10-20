@@ -59485,3 +59485,2881 @@ return reactDom;
   Object.defineProperty(exports, '__esModule', { value: true });
 
 })));
+
+(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.PropTypes = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+/**
+ * Copyright (c) 2013-present, Facebook, Inc.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+'use strict';
+
+var printWarning = function() {};
+
+if ("development" !== 'production') {
+  var ReactPropTypesSecret = require('./lib/ReactPropTypesSecret');
+  var loggedTypeFailures = {};
+
+  printWarning = function(text) {
+    var message = 'Warning: ' + text;
+    if (typeof console !== 'undefined') {
+      console.error(message);
+    }
+    try {
+      // --- Welcome to debugging React ---
+      // This error was thrown as a convenience so that you can use this stack
+      // to find the callsite that caused this warning to fire.
+      throw new Error(message);
+    } catch (x) {}
+  };
+}
+
+/**
+ * Assert that the values match with the type specs.
+ * Error messages are memorized and will only be shown once.
+ *
+ * @param {object} typeSpecs Map of name to a ReactPropType
+ * @param {object} values Runtime values that need to be type-checked
+ * @param {string} location e.g. "prop", "context", "child context"
+ * @param {string} componentName Name of the component for error messages.
+ * @param {?Function} getStack Returns the component stack.
+ * @private
+ */
+function checkPropTypes(typeSpecs, values, location, componentName, getStack) {
+  if ("development" !== 'production') {
+    for (var typeSpecName in typeSpecs) {
+      if (typeSpecs.hasOwnProperty(typeSpecName)) {
+        var error;
+        // Prop type validation may throw. In case they do, we don't want to
+        // fail the render phase where it didn't fail before. So we log it.
+        // After these have been cleaned up, we'll let them throw.
+        try {
+          // This is intentionally an invariant that gets caught. It's the same
+          // behavior as without this statement except with a better message.
+          if (typeof typeSpecs[typeSpecName] !== 'function') {
+            var err = Error(
+              (componentName || 'React class') + ': ' + location + ' type `' + typeSpecName + '` is invalid; ' +
+              'it must be a function, usually from the `prop-types` package, but received `' + typeof typeSpecs[typeSpecName] + '`.'
+            );
+            err.name = 'Invariant Violation';
+            throw err;
+          }
+          error = typeSpecs[typeSpecName](values, typeSpecName, componentName, location, null, ReactPropTypesSecret);
+        } catch (ex) {
+          error = ex;
+        }
+        if (error && !(error instanceof Error)) {
+          printWarning(
+            (componentName || 'React class') + ': type specification of ' +
+            location + ' `' + typeSpecName + '` is invalid; the type checker ' +
+            'function must return `null` or an `Error` but returned a ' + typeof error + '. ' +
+            'You may have forgotten to pass an argument to the type checker ' +
+            'creator (arrayOf, instanceOf, objectOf, oneOf, oneOfType, and ' +
+            'shape all require an argument).'
+          )
+
+        }
+        if (error instanceof Error && !(error.message in loggedTypeFailures)) {
+          // Only monitor this failure once because there tends to be a lot of the
+          // same error.
+          loggedTypeFailures[error.message] = true;
+
+          var stack = getStack ? getStack() : '';
+
+          printWarning(
+            'Failed ' + location + ' type: ' + error.message + (stack != null ? stack : '')
+          );
+        }
+      }
+    }
+  }
+}
+
+module.exports = checkPropTypes;
+
+},{"./lib/ReactPropTypesSecret":5}],2:[function(require,module,exports){
+/**
+ * Copyright (c) 2013-present, Facebook, Inc.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+'use strict';
+
+var ReactPropTypesSecret = require('./lib/ReactPropTypesSecret');
+
+function emptyFunction() {}
+
+module.exports = function() {
+  function shim(props, propName, componentName, location, propFullName, secret) {
+    if (secret === ReactPropTypesSecret) {
+      // It is still safe when called from React.
+      return;
+    }
+    var err = new Error(
+      'Calling PropTypes validators directly is not supported by the `prop-types` package. ' +
+      'Use PropTypes.checkPropTypes() to call them. ' +
+      'Read more at http://fb.me/use-check-prop-types'
+    );
+    err.name = 'Invariant Violation';
+    throw err;
+  };
+  shim.isRequired = shim;
+  function getShim() {
+    return shim;
+  };
+  // Important!
+  // Keep this list in sync with production version in `./factoryWithTypeCheckers.js`.
+  var ReactPropTypes = {
+    array: shim,
+    bool: shim,
+    func: shim,
+    number: shim,
+    object: shim,
+    string: shim,
+    symbol: shim,
+
+    any: shim,
+    arrayOf: getShim,
+    element: shim,
+    instanceOf: getShim,
+    node: shim,
+    objectOf: getShim,
+    oneOf: getShim,
+    oneOfType: getShim,
+    shape: getShim,
+    exact: getShim
+  };
+
+  ReactPropTypes.checkPropTypes = emptyFunction;
+  ReactPropTypes.PropTypes = ReactPropTypes;
+
+  return ReactPropTypes;
+};
+
+},{"./lib/ReactPropTypesSecret":5}],3:[function(require,module,exports){
+/**
+ * Copyright (c) 2013-present, Facebook, Inc.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+'use strict';
+
+var assign = require('object-assign');
+
+var ReactPropTypesSecret = require('./lib/ReactPropTypesSecret');
+var checkPropTypes = require('./checkPropTypes');
+
+var printWarning = function() {};
+
+if ("development" !== 'production') {
+  printWarning = function(text) {
+    var message = 'Warning: ' + text;
+    if (typeof console !== 'undefined') {
+      console.error(message);
+    }
+    try {
+      // --- Welcome to debugging React ---
+      // This error was thrown as a convenience so that you can use this stack
+      // to find the callsite that caused this warning to fire.
+      throw new Error(message);
+    } catch (x) {}
+  };
+}
+
+function emptyFunctionThatReturnsNull() {
+  return null;
+}
+
+module.exports = function(isValidElement, throwOnDirectAccess) {
+  /* global Symbol */
+  var ITERATOR_SYMBOL = typeof Symbol === 'function' && Symbol.iterator;
+  var FAUX_ITERATOR_SYMBOL = '@@iterator'; // Before Symbol spec.
+
+  /**
+   * Returns the iterator method function contained on the iterable object.
+   *
+   * Be sure to invoke the function with the iterable as context:
+   *
+   *     var iteratorFn = getIteratorFn(myIterable);
+   *     if (iteratorFn) {
+   *       var iterator = iteratorFn.call(myIterable);
+   *       ...
+   *     }
+   *
+   * @param {?object} maybeIterable
+   * @return {?function}
+   */
+  function getIteratorFn(maybeIterable) {
+    var iteratorFn = maybeIterable && (ITERATOR_SYMBOL && maybeIterable[ITERATOR_SYMBOL] || maybeIterable[FAUX_ITERATOR_SYMBOL]);
+    if (typeof iteratorFn === 'function') {
+      return iteratorFn;
+    }
+  }
+
+  /**
+   * Collection of methods that allow declaration and validation of props that are
+   * supplied to React components. Example usage:
+   *
+   *   var Props = require('ReactPropTypes');
+   *   var MyArticle = React.createClass({
+   *     propTypes: {
+   *       // An optional string prop named "description".
+   *       description: Props.string,
+   *
+   *       // A required enum prop named "category".
+   *       category: Props.oneOf(['News','Photos']).isRequired,
+   *
+   *       // A prop named "dialog" that requires an instance of Dialog.
+   *       dialog: Props.instanceOf(Dialog).isRequired
+   *     },
+   *     render: function() { ... }
+   *   });
+   *
+   * A more formal specification of how these methods are used:
+   *
+   *   type := array|bool|func|object|number|string|oneOf([...])|instanceOf(...)
+   *   decl := ReactPropTypes.{type}(.isRequired)?
+   *
+   * Each and every declaration produces a function with the same signature. This
+   * allows the creation of custom validation functions. For example:
+   *
+   *  var MyLink = React.createClass({
+   *    propTypes: {
+   *      // An optional string or URI prop named "href".
+   *      href: function(props, propName, componentName) {
+   *        var propValue = props[propName];
+   *        if (propValue != null && typeof propValue !== 'string' &&
+   *            !(propValue instanceof URI)) {
+   *          return new Error(
+   *            'Expected a string or an URI for ' + propName + ' in ' +
+   *            componentName
+   *          );
+   *        }
+   *      }
+   *    },
+   *    render: function() {...}
+   *  });
+   *
+   * @internal
+   */
+
+  var ANONYMOUS = '<<anonymous>>';
+
+  // Important!
+  // Keep this list in sync with production version in `./factoryWithThrowingShims.js`.
+  var ReactPropTypes = {
+    array: createPrimitiveTypeChecker('array'),
+    bool: createPrimitiveTypeChecker('boolean'),
+    func: createPrimitiveTypeChecker('function'),
+    number: createPrimitiveTypeChecker('number'),
+    object: createPrimitiveTypeChecker('object'),
+    string: createPrimitiveTypeChecker('string'),
+    symbol: createPrimitiveTypeChecker('symbol'),
+
+    any: createAnyTypeChecker(),
+    arrayOf: createArrayOfTypeChecker,
+    element: createElementTypeChecker(),
+    instanceOf: createInstanceTypeChecker,
+    node: createNodeChecker(),
+    objectOf: createObjectOfTypeChecker,
+    oneOf: createEnumTypeChecker,
+    oneOfType: createUnionTypeChecker,
+    shape: createShapeTypeChecker,
+    exact: createStrictShapeTypeChecker,
+  };
+
+  /**
+   * inlined Object.is polyfill to avoid requiring consumers ship their own
+   * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/is
+   */
+  /*eslint-disable no-self-compare*/
+  function is(x, y) {
+    // SameValue algorithm
+    if (x === y) {
+      // Steps 1-5, 7-10
+      // Steps 6.b-6.e: +0 != -0
+      return x !== 0 || 1 / x === 1 / y;
+    } else {
+      // Step 6.a: NaN == NaN
+      return x !== x && y !== y;
+    }
+  }
+  /*eslint-enable no-self-compare*/
+
+  /**
+   * We use an Error-like object for backward compatibility as people may call
+   * PropTypes directly and inspect their output. However, we don't use real
+   * Errors anymore. We don't inspect their stack anyway, and creating them
+   * is prohibitively expensive if they are created too often, such as what
+   * happens in oneOfType() for any type before the one that matched.
+   */
+  function PropTypeError(message) {
+    this.message = message;
+    this.stack = '';
+  }
+  // Make `instanceof Error` still work for returned errors.
+  PropTypeError.prototype = Error.prototype;
+
+  function createChainableTypeChecker(validate) {
+    if ("development" !== 'production') {
+      var manualPropTypeCallCache = {};
+      var manualPropTypeWarningCount = 0;
+    }
+    function checkType(isRequired, props, propName, componentName, location, propFullName, secret) {
+      componentName = componentName || ANONYMOUS;
+      propFullName = propFullName || propName;
+
+      if (secret !== ReactPropTypesSecret) {
+        if (throwOnDirectAccess) {
+          // New behavior only for users of `prop-types` package
+          var err = new Error(
+            'Calling PropTypes validators directly is not supported by the `prop-types` package. ' +
+            'Use `PropTypes.checkPropTypes()` to call them. ' +
+            'Read more at http://fb.me/use-check-prop-types'
+          );
+          err.name = 'Invariant Violation';
+          throw err;
+        } else if ("development" !== 'production' && typeof console !== 'undefined') {
+          // Old behavior for people using React.PropTypes
+          var cacheKey = componentName + ':' + propName;
+          if (
+            !manualPropTypeCallCache[cacheKey] &&
+            // Avoid spamming the console because they are often not actionable except for lib authors
+            manualPropTypeWarningCount < 3
+          ) {
+            printWarning(
+              'You are manually calling a React.PropTypes validation ' +
+              'function for the `' + propFullName + '` prop on `' + componentName  + '`. This is deprecated ' +
+              'and will throw in the standalone `prop-types` package. ' +
+              'You may be seeing this warning due to a third-party PropTypes ' +
+              'library. See https://fb.me/react-warning-dont-call-proptypes ' + 'for details.'
+            );
+            manualPropTypeCallCache[cacheKey] = true;
+            manualPropTypeWarningCount++;
+          }
+        }
+      }
+      if (props[propName] == null) {
+        if (isRequired) {
+          if (props[propName] === null) {
+            return new PropTypeError('The ' + location + ' `' + propFullName + '` is marked as required ' + ('in `' + componentName + '`, but its value is `null`.'));
+          }
+          return new PropTypeError('The ' + location + ' `' + propFullName + '` is marked as required in ' + ('`' + componentName + '`, but its value is `undefined`.'));
+        }
+        return null;
+      } else {
+        return validate(props, propName, componentName, location, propFullName);
+      }
+    }
+
+    var chainedCheckType = checkType.bind(null, false);
+    chainedCheckType.isRequired = checkType.bind(null, true);
+
+    return chainedCheckType;
+  }
+
+  function createPrimitiveTypeChecker(expectedType) {
+    function validate(props, propName, componentName, location, propFullName, secret) {
+      var propValue = props[propName];
+      var propType = getPropType(propValue);
+      if (propType !== expectedType) {
+        // `propValue` being instance of, say, date/regexp, pass the 'object'
+        // check, but we can offer a more precise error message here rather than
+        // 'of type `object`'.
+        var preciseType = getPreciseType(propValue);
+
+        return new PropTypeError('Invalid ' + location + ' `' + propFullName + '` of type ' + ('`' + preciseType + '` supplied to `' + componentName + '`, expected ') + ('`' + expectedType + '`.'));
+      }
+      return null;
+    }
+    return createChainableTypeChecker(validate);
+  }
+
+  function createAnyTypeChecker() {
+    return createChainableTypeChecker(emptyFunctionThatReturnsNull);
+  }
+
+  function createArrayOfTypeChecker(typeChecker) {
+    function validate(props, propName, componentName, location, propFullName) {
+      if (typeof typeChecker !== 'function') {
+        return new PropTypeError('Property `' + propFullName + '` of component `' + componentName + '` has invalid PropType notation inside arrayOf.');
+      }
+      var propValue = props[propName];
+      if (!Array.isArray(propValue)) {
+        var propType = getPropType(propValue);
+        return new PropTypeError('Invalid ' + location + ' `' + propFullName + '` of type ' + ('`' + propType + '` supplied to `' + componentName + '`, expected an array.'));
+      }
+      for (var i = 0; i < propValue.length; i++) {
+        var error = typeChecker(propValue, i, componentName, location, propFullName + '[' + i + ']', ReactPropTypesSecret);
+        if (error instanceof Error) {
+          return error;
+        }
+      }
+      return null;
+    }
+    return createChainableTypeChecker(validate);
+  }
+
+  function createElementTypeChecker() {
+    function validate(props, propName, componentName, location, propFullName) {
+      var propValue = props[propName];
+      if (!isValidElement(propValue)) {
+        var propType = getPropType(propValue);
+        return new PropTypeError('Invalid ' + location + ' `' + propFullName + '` of type ' + ('`' + propType + '` supplied to `' + componentName + '`, expected a single ReactElement.'));
+      }
+      return null;
+    }
+    return createChainableTypeChecker(validate);
+  }
+
+  function createInstanceTypeChecker(expectedClass) {
+    function validate(props, propName, componentName, location, propFullName) {
+      if (!(props[propName] instanceof expectedClass)) {
+        var expectedClassName = expectedClass.name || ANONYMOUS;
+        var actualClassName = getClassName(props[propName]);
+        return new PropTypeError('Invalid ' + location + ' `' + propFullName + '` of type ' + ('`' + actualClassName + '` supplied to `' + componentName + '`, expected ') + ('instance of `' + expectedClassName + '`.'));
+      }
+      return null;
+    }
+    return createChainableTypeChecker(validate);
+  }
+
+  function createEnumTypeChecker(expectedValues) {
+    if (!Array.isArray(expectedValues)) {
+      "development" !== 'production' ? printWarning('Invalid argument supplied to oneOf, expected an instance of array.') : void 0;
+      return emptyFunctionThatReturnsNull;
+    }
+
+    function validate(props, propName, componentName, location, propFullName) {
+      var propValue = props[propName];
+      for (var i = 0; i < expectedValues.length; i++) {
+        if (is(propValue, expectedValues[i])) {
+          return null;
+        }
+      }
+
+      var valuesString = JSON.stringify(expectedValues);
+      return new PropTypeError('Invalid ' + location + ' `' + propFullName + '` of value `' + propValue + '` ' + ('supplied to `' + componentName + '`, expected one of ' + valuesString + '.'));
+    }
+    return createChainableTypeChecker(validate);
+  }
+
+  function createObjectOfTypeChecker(typeChecker) {
+    function validate(props, propName, componentName, location, propFullName) {
+      if (typeof typeChecker !== 'function') {
+        return new PropTypeError('Property `' + propFullName + '` of component `' + componentName + '` has invalid PropType notation inside objectOf.');
+      }
+      var propValue = props[propName];
+      var propType = getPropType(propValue);
+      if (propType !== 'object') {
+        return new PropTypeError('Invalid ' + location + ' `' + propFullName + '` of type ' + ('`' + propType + '` supplied to `' + componentName + '`, expected an object.'));
+      }
+      for (var key in propValue) {
+        if (propValue.hasOwnProperty(key)) {
+          var error = typeChecker(propValue, key, componentName, location, propFullName + '.' + key, ReactPropTypesSecret);
+          if (error instanceof Error) {
+            return error;
+          }
+        }
+      }
+      return null;
+    }
+    return createChainableTypeChecker(validate);
+  }
+
+  function createUnionTypeChecker(arrayOfTypeCheckers) {
+    if (!Array.isArray(arrayOfTypeCheckers)) {
+      "development" !== 'production' ? printWarning('Invalid argument supplied to oneOfType, expected an instance of array.') : void 0;
+      return emptyFunctionThatReturnsNull;
+    }
+
+    for (var i = 0; i < arrayOfTypeCheckers.length; i++) {
+      var checker = arrayOfTypeCheckers[i];
+      if (typeof checker !== 'function') {
+        printWarning(
+          'Invalid argument supplied to oneOfType. Expected an array of check functions, but ' +
+          'received ' + getPostfixForTypeWarning(checker) + ' at index ' + i + '.'
+        );
+        return emptyFunctionThatReturnsNull;
+      }
+    }
+
+    function validate(props, propName, componentName, location, propFullName) {
+      for (var i = 0; i < arrayOfTypeCheckers.length; i++) {
+        var checker = arrayOfTypeCheckers[i];
+        if (checker(props, propName, componentName, location, propFullName, ReactPropTypesSecret) == null) {
+          return null;
+        }
+      }
+
+      return new PropTypeError('Invalid ' + location + ' `' + propFullName + '` supplied to ' + ('`' + componentName + '`.'));
+    }
+    return createChainableTypeChecker(validate);
+  }
+
+  function createNodeChecker() {
+    function validate(props, propName, componentName, location, propFullName) {
+      if (!isNode(props[propName])) {
+        return new PropTypeError('Invalid ' + location + ' `' + propFullName + '` supplied to ' + ('`' + componentName + '`, expected a ReactNode.'));
+      }
+      return null;
+    }
+    return createChainableTypeChecker(validate);
+  }
+
+  function createShapeTypeChecker(shapeTypes) {
+    function validate(props, propName, componentName, location, propFullName) {
+      var propValue = props[propName];
+      var propType = getPropType(propValue);
+      if (propType !== 'object') {
+        return new PropTypeError('Invalid ' + location + ' `' + propFullName + '` of type `' + propType + '` ' + ('supplied to `' + componentName + '`, expected `object`.'));
+      }
+      for (var key in shapeTypes) {
+        var checker = shapeTypes[key];
+        if (!checker) {
+          continue;
+        }
+        var error = checker(propValue, key, componentName, location, propFullName + '.' + key, ReactPropTypesSecret);
+        if (error) {
+          return error;
+        }
+      }
+      return null;
+    }
+    return createChainableTypeChecker(validate);
+  }
+
+  function createStrictShapeTypeChecker(shapeTypes) {
+    function validate(props, propName, componentName, location, propFullName) {
+      var propValue = props[propName];
+      var propType = getPropType(propValue);
+      if (propType !== 'object') {
+        return new PropTypeError('Invalid ' + location + ' `' + propFullName + '` of type `' + propType + '` ' + ('supplied to `' + componentName + '`, expected `object`.'));
+      }
+      // We need to check all keys in case some are required but missing from
+      // props.
+      var allKeys = assign({}, props[propName], shapeTypes);
+      for (var key in allKeys) {
+        var checker = shapeTypes[key];
+        if (!checker) {
+          return new PropTypeError(
+            'Invalid ' + location + ' `' + propFullName + '` key `' + key + '` supplied to `' + componentName + '`.' +
+            '\nBad object: ' + JSON.stringify(props[propName], null, '  ') +
+            '\nValid keys: ' +  JSON.stringify(Object.keys(shapeTypes), null, '  ')
+          );
+        }
+        var error = checker(propValue, key, componentName, location, propFullName + '.' + key, ReactPropTypesSecret);
+        if (error) {
+          return error;
+        }
+      }
+      return null;
+    }
+
+    return createChainableTypeChecker(validate);
+  }
+
+  function isNode(propValue) {
+    switch (typeof propValue) {
+      case 'number':
+      case 'string':
+      case 'undefined':
+        return true;
+      case 'boolean':
+        return !propValue;
+      case 'object':
+        if (Array.isArray(propValue)) {
+          return propValue.every(isNode);
+        }
+        if (propValue === null || isValidElement(propValue)) {
+          return true;
+        }
+
+        var iteratorFn = getIteratorFn(propValue);
+        if (iteratorFn) {
+          var iterator = iteratorFn.call(propValue);
+          var step;
+          if (iteratorFn !== propValue.entries) {
+            while (!(step = iterator.next()).done) {
+              if (!isNode(step.value)) {
+                return false;
+              }
+            }
+          } else {
+            // Iterator will provide entry [k,v] tuples rather than values.
+            while (!(step = iterator.next()).done) {
+              var entry = step.value;
+              if (entry) {
+                if (!isNode(entry[1])) {
+                  return false;
+                }
+              }
+            }
+          }
+        } else {
+          return false;
+        }
+
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  function isSymbol(propType, propValue) {
+    // Native Symbol.
+    if (propType === 'symbol') {
+      return true;
+    }
+
+    // 19.4.3.5 Symbol.prototype[@@toStringTag] === 'Symbol'
+    if (propValue['@@toStringTag'] === 'Symbol') {
+      return true;
+    }
+
+    // Fallback for non-spec compliant Symbols which are polyfilled.
+    if (typeof Symbol === 'function' && propValue instanceof Symbol) {
+      return true;
+    }
+
+    return false;
+  }
+
+  // Equivalent of `typeof` but with special handling for array and regexp.
+  function getPropType(propValue) {
+    var propType = typeof propValue;
+    if (Array.isArray(propValue)) {
+      return 'array';
+    }
+    if (propValue instanceof RegExp) {
+      // Old webkits (at least until Android 4.0) return 'function' rather than
+      // 'object' for typeof a RegExp. We'll normalize this here so that /bla/
+      // passes PropTypes.object.
+      return 'object';
+    }
+    if (isSymbol(propType, propValue)) {
+      return 'symbol';
+    }
+    return propType;
+  }
+
+  // This handles more types than `getPropType`. Only used for error messages.
+  // See `createPrimitiveTypeChecker`.
+  function getPreciseType(propValue) {
+    if (typeof propValue === 'undefined' || propValue === null) {
+      return '' + propValue;
+    }
+    var propType = getPropType(propValue);
+    if (propType === 'object') {
+      if (propValue instanceof Date) {
+        return 'date';
+      } else if (propValue instanceof RegExp) {
+        return 'regexp';
+      }
+    }
+    return propType;
+  }
+
+  // Returns a string that is postfixed to a warning about an invalid type.
+  // For example, "undefined" or "of type array"
+  function getPostfixForTypeWarning(value) {
+    var type = getPreciseType(value);
+    switch (type) {
+      case 'array':
+      case 'object':
+        return 'an ' + type;
+      case 'boolean':
+      case 'date':
+      case 'regexp':
+        return 'a ' + type;
+      default:
+        return type;
+    }
+  }
+
+  // Returns class name of the object, if any.
+  function getClassName(propValue) {
+    if (!propValue.constructor || !propValue.constructor.name) {
+      return ANONYMOUS;
+    }
+    return propValue.constructor.name;
+  }
+
+  ReactPropTypes.checkPropTypes = checkPropTypes;
+  ReactPropTypes.PropTypes = ReactPropTypes;
+
+  return ReactPropTypes;
+};
+
+},{"./checkPropTypes":1,"./lib/ReactPropTypesSecret":5,"object-assign":6}],4:[function(require,module,exports){
+/**
+ * Copyright (c) 2013-present, Facebook, Inc.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+if ("development" !== 'production') {
+  var REACT_ELEMENT_TYPE = (typeof Symbol === 'function' &&
+    Symbol.for &&
+    Symbol.for('react.element')) ||
+    0xeac7;
+
+  var isValidElement = function(object) {
+    return typeof object === 'object' &&
+      object !== null &&
+      object.$$typeof === REACT_ELEMENT_TYPE;
+  };
+
+  // By explicitly using `prop-types` you are opting into new development behavior.
+  // http://fb.me/prop-types-in-prod
+  var throwOnDirectAccess = true;
+  module.exports = require('./factoryWithTypeCheckers')(isValidElement, throwOnDirectAccess);
+} else {
+  // By explicitly using `prop-types` you are opting into new production behavior.
+  // http://fb.me/prop-types-in-prod
+  module.exports = require('./factoryWithThrowingShims')();
+}
+
+},{"./factoryWithThrowingShims":2,"./factoryWithTypeCheckers":3}],5:[function(require,module,exports){
+/**
+ * Copyright (c) 2013-present, Facebook, Inc.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+'use strict';
+
+var ReactPropTypesSecret = 'SECRET_DO_NOT_PASS_THIS_OR_YOU_WILL_BE_FIRED';
+
+module.exports = ReactPropTypesSecret;
+
+},{}],6:[function(require,module,exports){
+/*
+object-assign
+(c) Sindre Sorhus
+@license MIT
+*/
+
+'use strict';
+/* eslint-disable no-unused-vars */
+var getOwnPropertySymbols = Object.getOwnPropertySymbols;
+var hasOwnProperty = Object.prototype.hasOwnProperty;
+var propIsEnumerable = Object.prototype.propertyIsEnumerable;
+
+function toObject(val) {
+	if (val === null || val === undefined) {
+		throw new TypeError('Object.assign cannot be called with null or undefined');
+	}
+
+	return Object(val);
+}
+
+function shouldUseNative() {
+	try {
+		if (!Object.assign) {
+			return false;
+		}
+
+		// Detect buggy property enumeration order in older V8 versions.
+
+		// https://bugs.chromium.org/p/v8/issues/detail?id=4118
+		var test1 = new String('abc');  // eslint-disable-line no-new-wrappers
+		test1[5] = 'de';
+		if (Object.getOwnPropertyNames(test1)[0] === '5') {
+			return false;
+		}
+
+		// https://bugs.chromium.org/p/v8/issues/detail?id=3056
+		var test2 = {};
+		for (var i = 0; i < 10; i++) {
+			test2['_' + String.fromCharCode(i)] = i;
+		}
+		var order2 = Object.getOwnPropertyNames(test2).map(function (n) {
+			return test2[n];
+		});
+		if (order2.join('') !== '0123456789') {
+			return false;
+		}
+
+		// https://bugs.chromium.org/p/v8/issues/detail?id=3056
+		var test3 = {};
+		'abcdefghijklmnopqrst'.split('').forEach(function (letter) {
+			test3[letter] = letter;
+		});
+		if (Object.keys(Object.assign({}, test3)).join('') !==
+				'abcdefghijklmnopqrst') {
+			return false;
+		}
+
+		return true;
+	} catch (err) {
+		// We don't expect any of the above to throw, but better to be safe.
+		return false;
+	}
+}
+
+module.exports = shouldUseNative() ? Object.assign : function (target, source) {
+	var from;
+	var to = toObject(target);
+	var symbols;
+
+	for (var s = 1; s < arguments.length; s++) {
+		from = Object(arguments[s]);
+
+		for (var key in from) {
+			if (hasOwnProperty.call(from, key)) {
+				to[key] = from[key];
+			}
+		}
+
+		if (getOwnPropertySymbols) {
+			symbols = getOwnPropertySymbols(from);
+			for (var i = 0; i < symbols.length; i++) {
+				if (propIsEnumerable.call(from, symbols[i])) {
+					to[symbols[i]] = from[symbols[i]];
+				}
+			}
+		}
+	}
+
+	return to;
+};
+
+},{}]},{},[4])(4)
+});
+!function(e,t){"object"==typeof exports&&"undefined"!=typeof module?module.exports=t(require("react"),require("prop-types")):"function"==typeof define&&define.amd?define(["react","prop-types"],t):e.Dropzone=t(e.React,e.PropTypes)}(this,function(e,t){"use strict";e=e&&e.hasOwnProperty("default")?e.default:e,t=t&&t.hasOwnProperty("default")?t.default:t;var n,r,o=(function(e){e.exports=function(e){function t(r){if(n[r])return n[r].exports;var o=n[r]={i:r,l:!1,exports:{}};return e[r].call(o.exports,o,o.exports,t),o.l=!0,o.exports}var n={};return t.m=e,t.c=n,t.d=function(e,n,r){t.o(e,n)||Object.defineProperty(e,n,{configurable:!1,enumerable:!0,get:r})},t.n=function(e){var n=e&&e.__esModule?function(){return e.default}:function(){return e};return t.d(n,"a",n),n},t.o=function(e,t){return Object.prototype.hasOwnProperty.call(e,t)},t.p="",t(t.s=13)}([function(e,t){var n=e.exports="undefined"!=typeof window&&window.Math==Math?window:"undefined"!=typeof self&&self.Math==Math?self:Function("return this")();"number"==typeof __g&&(__g=n)},function(e,t){e.exports=function(e){return"object"==typeof e?null!==e:"function"==typeof e}},function(e,t){var n=e.exports={version:"2.5.0"};"number"==typeof __e&&(__e=n)},function(e,t,n){e.exports=!n(4)(function(){return 7!=Object.defineProperty({},"a",{get:function(){return 7}}).a})},function(e,t){e.exports=function(e){try{return!!e()}catch(e){return!0}}},function(e,t){var n={}.toString;e.exports=function(e){return n.call(e).slice(8,-1)}},function(e,t,n){var r=n(32)("wks"),o=n(9),i=n(0).Symbol,a="function"==typeof i;(e.exports=function(e){return r[e]||(r[e]=a&&i[e]||(a?i:o)("Symbol."+e))}).store=r},function(e,t,n){var r=n(0),o=n(2),i=n(8),a=n(22),s=n(10),c=function(e,t,n){var u,l,p,f,d=e&c.F,v=e&c.G,h=e&c.S,g=e&c.P,y=e&c.B,m=v?r:h?r[t]||(r[t]={}):(r[t]||{}).prototype,b=v?o:o[t]||(o[t]={}),D=b.prototype||(b.prototype={});for(u in v&&(n=t),n)p=((l=!d&&m&&void 0!==m[u])?m:n)[u],f=y&&l?s(p,r):g&&"function"==typeof p?s(Function.call,p):p,m&&a(m,u,p,e&c.U),b[u]!=p&&i(b,u,f),g&&D[u]!=p&&(D[u]=p)};r.core=o,c.F=1,c.G=2,c.S=4,c.P=8,c.B=16,c.W=32,c.U=64,c.R=128,e.exports=c},function(e,t,n){var r=n(16),o=n(21);e.exports=n(3)?function(e,t,n){return r.f(e,t,o(1,n))}:function(e,t,n){return e[t]=n,e}},function(e,t){var n=0,r=Math.random();e.exports=function(e){return"Symbol(".concat(void 0===e?"":e,")_",(++n+r).toString(36))}},function(e,t,n){var r=n(24);e.exports=function(e,t,n){if(r(e),void 0===t)return e;switch(n){case 1:return function(n){return e.call(t,n)};case 2:return function(n,r){return e.call(t,n,r)};case 3:return function(n,r,o){return e.call(t,n,r,o)}}return function(){return e.apply(t,arguments)}}},function(e,t){e.exports=function(e){if(void 0==e)throw TypeError("Can't call method on  "+e);return e}},function(e,t,n){var r=n(28),o=Math.min;e.exports=function(e){return e>0?o(r(e),9007199254740991):0}},function(e,t,n){t.__esModule=!0,t.default=function(e,t){if(e&&t){var n=Array.isArray(t)?t:t.split(","),r=e.name||"",o=e.type||"",i=o.replace(/\/.*$/,"");return n.some(function(e){var t=e.trim();return"."===t.charAt(0)?r.toLowerCase().endsWith(t.toLowerCase()):t.endsWith("/*")?i===t.replace(/\/.*$/,""):o===t})}return!0},n(14),n(34)},function(e,t,n){n(15),e.exports=n(2).Array.some},function(e,t,n){var r=n(7),o=n(25)(3);r(r.P+r.F*!n(33)([].some,!0),"Array",{some:function(e){return o(this,e,arguments[1])}})},function(e,t,n){var r=n(17),o=n(18),i=n(20),a=Object.defineProperty;t.f=n(3)?Object.defineProperty:function(e,t,n){if(r(e),t=i(t,!0),r(n),o)try{return a(e,t,n)}catch(e){}if("get"in n||"set"in n)throw TypeError("Accessors not supported!");return"value"in n&&(e[t]=n.value),e}},function(e,t,n){var r=n(1);e.exports=function(e){if(!r(e))throw TypeError(e+" is not an object!");return e}},function(e,t,n){e.exports=!n(3)&&!n(4)(function(){return 7!=Object.defineProperty(n(19)("div"),"a",{get:function(){return 7}}).a})},function(e,t,n){var r=n(1),o=n(0).document,i=r(o)&&r(o.createElement);e.exports=function(e){return i?o.createElement(e):{}}},function(e,t,n){var r=n(1);e.exports=function(e,t){if(!r(e))return e;var n,o;if(t&&"function"==typeof(n=e.toString)&&!r(o=n.call(e)))return o;if("function"==typeof(n=e.valueOf)&&!r(o=n.call(e)))return o;if(!t&&"function"==typeof(n=e.toString)&&!r(o=n.call(e)))return o;throw TypeError("Can't convert object to primitive value")}},function(e,t){e.exports=function(e,t){return{enumerable:!(1&e),configurable:!(2&e),writable:!(4&e),value:t}}},function(e,t,n){var r=n(0),o=n(8),i=n(23),a=n(9)("src"),s=Function.toString,c=(""+s).split("toString");n(2).inspectSource=function(e){return s.call(e)},(e.exports=function(e,t,n,s){var u="function"==typeof n;u&&(i(n,"name")||o(n,"name",t)),e[t]!==n&&(u&&(i(n,a)||o(n,a,e[t]?""+e[t]:c.join(String(t)))),e===r?e[t]=n:s?e[t]?e[t]=n:o(e,t,n):(delete e[t],o(e,t,n)))})(Function.prototype,"toString",function(){return"function"==typeof this&&this[a]||s.call(this)})},function(e,t){var n={}.hasOwnProperty;e.exports=function(e,t){return n.call(e,t)}},function(e,t){e.exports=function(e){if("function"!=typeof e)throw TypeError(e+" is not a function!");return e}},function(e,t,n){var r=n(10),o=n(26),i=n(27),a=n(12),s=n(29);e.exports=function(e,t){var n=1==e,c=2==e,u=3==e,l=4==e,p=6==e,f=5==e||p,d=t||s;return function(t,s,v){for(var h,g,y=i(t),m=o(y),b=r(s,v,3),D=a(m.length),x=0,S=n?d(t,D):c?d(t,0):void 0;D>x;x++)if((f||x in m)&&(g=b(h=m[x],x,y),e))if(n)S[x]=g;else if(g)switch(e){case 3:return!0;case 5:return h;case 6:return x;case 2:S.push(h)}else if(l)return!1;return p?-1:u||l?l:S}}},function(e,t,n){var r=n(5);e.exports=Object("z").propertyIsEnumerable(0)?Object:function(e){return"String"==r(e)?e.split(""):Object(e)}},function(e,t,n){var r=n(11);e.exports=function(e){return Object(r(e))}},function(e,t){var n=Math.ceil,r=Math.floor;e.exports=function(e){return isNaN(e=+e)?0:(e>0?r:n)(e)}},function(e,t,n){var r=n(30);e.exports=function(e,t){return new(r(e))(t)}},function(e,t,n){var r=n(1),o=n(31),i=n(6)("species");e.exports=function(e){var t;return o(e)&&("function"!=typeof(t=e.constructor)||t!==Array&&!o(t.prototype)||(t=void 0),r(t)&&null===(t=t[i])&&(t=void 0)),void 0===t?Array:t}},function(e,t,n){var r=n(5);e.exports=Array.isArray||function(e){return"Array"==r(e)}},function(e,t,n){var r=n(0),o=r["__core-js_shared__"]||(r["__core-js_shared__"]={});e.exports=function(e){return o[e]||(o[e]={})}},function(e,t,n){var r=n(4);e.exports=function(e,t){return!!e&&r(function(){t?e.call(null,function(){},1):e.call(null)})}},function(e,t,n){n(35),e.exports=n(2).String.endsWith},function(e,t,n){var r=n(7),o=n(12),i=n(36),a="".endsWith;r(r.P+r.F*n(38)("endsWith"),"String",{endsWith:function(e){var t=i(this,e,"endsWith"),n=arguments.length>1?arguments[1]:void 0,r=o(t.length),s=void 0===n?r:Math.min(o(n),r),c=String(e);return a?a.call(t,c,s):t.slice(s-c.length,s)===c}})},function(e,t,n){var r=n(37),o=n(11);e.exports=function(e,t,n){if(r(t))throw TypeError("String#"+n+" doesn't accept regex!");return String(o(e))}},function(e,t,n){var r=n(1),o=n(5),i=n(6)("match");e.exports=function(e){var t;return r(e)&&(void 0!==(t=e[i])?!!t:"RegExp"==o(e))}},function(e,t,n){var r=n(6)("match");e.exports=function(e){var t=/./;try{"/./"[e](t)}catch(n){try{return t[r]=!1,!"/./"[e](t)}catch(e){}}return!0}}])}(n={exports:{}},n.exports),n.exports),i=(r=o)&&r.__esModule&&Object.prototype.hasOwnProperty.call(r,"default")?r.default:r,a=function(e,t){if(!(e instanceof t))throw new TypeError("Cannot call a class as a function")},s=function(){function e(e,t){for(var n=0;n<t.length;n++){var r=t[n];r.enumerable=r.enumerable||!1,r.configurable=!0,"value"in r&&(r.writable=!0),Object.defineProperty(e,r.key,r)}}return function(t,n,r){return n&&e(t.prototype,n),r&&e(t,r),t}}(),c=Object.assign||function(e){for(var t=1;t<arguments.length;t++){var n=arguments[t];for(var r in n)Object.prototype.hasOwnProperty.call(n,r)&&(e[r]=n[r])}return e},u=function(e,t){var n={};for(var r in e)t.indexOf(r)>=0||Object.prototype.hasOwnProperty.call(e,r)&&(n[r]=e[r]);return n},l=function(e,t){if(!e)throw new ReferenceError("this hasn't been initialised - super() hasn't been called");return!t||"object"!=typeof t&&"function"!=typeof t?e:t},p="undefined"==typeof document||!document||!document.createElement||"multiple"in document.createElement("input");function f(e,t){return"application/x-moz-file"===e.type||i(e,t)}function d(e){return!e.dataTransfer||Array.prototype.every.call(e.dataTransfer.types,function(e){return"Files"===e||"application/x-moz-file"===e})}function v(e){e.preventDefault()}var h={borderStyle:"solid",backgroundColor:"#eee"},g={borderStyle:"solid",borderColor:"#6c6",backgroundColor:"#eee"},y={borderStyle:"solid",borderColor:"#c66",backgroundColor:"#eee"},m={width:200,height:200,borderWidth:2,borderColor:"#666",borderStyle:"dashed",borderRadius:5},b={opacity:.5},D=function(t){function n(e,t){a(this,n);var r=l(this,(n.__proto__||Object.getPrototypeOf(n)).call(this,e,t));return r.renderChildren=function(e,t,n,o){return"function"==typeof e?e(c({},r.state,{isDragActive:t,isDragAccept:n,isDragReject:o,open:r.open})):e},r.composeHandlers=r.composeHandlers.bind(r),r.onClick=r.onClick.bind(r),r.onDocumentDrop=r.onDocumentDrop.bind(r),r.onDragEnter=r.onDragEnter.bind(r),r.onDragLeave=r.onDragLeave.bind(r),r.onDragOver=r.onDragOver.bind(r),r.onDragStart=r.onDragStart.bind(r),r.onDrop=r.onDrop.bind(r),r.onFileDialogCancel=r.onFileDialogCancel.bind(r),r.onInputElementClick=r.onInputElementClick.bind(r),r.open=r.open.bind(r),r.setRef=r.setRef.bind(r),r.setRefs=r.setRefs.bind(r),r.isFileDialogActive=!1,r.state={draggedFiles:[],acceptedFiles:[],rejectedFiles:[]},r}return function(e,t){if("function"!=typeof t&&null!==t)throw new TypeError("Super expression must either be null or a function, not "+typeof t);e.prototype=Object.create(t&&t.prototype,{constructor:{value:e,enumerable:!1,writable:!0,configurable:!0}}),t&&(Object.setPrototypeOf?Object.setPrototypeOf(e,t):e.__proto__=t)}(n,e.Component),s(n,[{key:"componentDidMount",value:function(){var e=this.props.preventDropOnDocument;this.dragTargets=[],e&&(document.addEventListener("dragover",v,!1),document.addEventListener("drop",this.onDocumentDrop,!1)),null!=this.fileInputEl&&this.fileInputEl.addEventListener("click",this.onInputElementClick,!1),window.addEventListener("focus",this.onFileDialogCancel,!1)}},{key:"componentWillUnmount",value:function(){this.props.preventDropOnDocument&&(document.removeEventListener("dragover",v),document.removeEventListener("drop",this.onDocumentDrop)),null!=this.fileInputEl&&this.fileInputEl.removeEventListener("click",this.onInputElementClick,!1),window.removeEventListener("focus",this.onFileDialogCancel,!1)}},{key:"composeHandlers",value:function(e){return this.props.disabled?null:e}},{key:"onDocumentDrop",value:function(e){this.node&&this.node.contains(e.target)||(e.preventDefault(),this.dragTargets=[])}},{key:"onDragStart",value:function(e){e.persist(),this.props.onDragStart&&d(e)&&this.props.onDragStart.call(this,e)}},{key:"onDragEnter",value:function(e){var t=this;e.preventDefault(),-1===this.dragTargets.indexOf(e.target)&&this.dragTargets.push(e.target),e.persist(),d(e)&&(Promise.resolve(this.props.getDataTransferItems(e)).then(function(n){e.isPropagationStopped()||t.setState({draggedFiles:n,isDragActive:!0})}),this.props.onDragEnter&&this.props.onDragEnter.call(this,e))}},{key:"onDragOver",value:function(e){e.preventDefault(),e.persist();try{e.dataTransfer.dropEffect=this.isFileDialogActive?"none":"copy"}catch(e){}return this.props.onDragOver&&d(e)&&this.props.onDragOver.call(this,e),!1}},{key:"onDragLeave",value:function(e){var t=this;e.preventDefault(),e.persist(),this.dragTargets=this.dragTargets.filter(function(n){return n!==e.target&&t.node.contains(n)}),this.dragTargets.length>0||(this.setState({isDragActive:!1,draggedFiles:[]}),this.props.onDragLeave&&d(e)&&this.props.onDragLeave.call(this,e))}},{key:"onDrop",value:function(e){var t=this,n=this.props,r=n.onDrop,o=n.onDropAccepted,i=n.onDropRejected,a=n.multiple,s=n.disablePreview,c=n.accept,u=n.getDataTransferItems;e.preventDefault(),e.persist(),this.dragTargets=[],this.isFileDialogActive=!1,this.draggedFiles=null,this.setState({isDragActive:!1,draggedFiles:[]}),d(e)&&Promise.resolve(u(e)).then(function(n){var u=[],l=[];e.isPropagationStopped()||(n.forEach(function(e){s||(e.preview=window.URL.createObjectURL(e)),f(e,c)&&function(e,t,n){return e.size<=t&&e.size>=n}(e,t.props.maxSize,t.props.minSize)?u.push(e):l.push(e)}),!a&&u.length>1&&l.push.apply(l,function(e){if(Array.isArray(e)){for(var t=0,n=Array(e.length);t<e.length;t++)n[t]=e[t];return n}return Array.from(e)}(u.splice(0))),t.setState({acceptedFiles:u,rejectedFiles:l},function(){r&&r.call(t,u,l,e),l.length>0&&i&&i.call(t,l,e),u.length>0&&o&&o.call(t,u,e)}))})}},{key:"onClick",value:function(e){var t=this.props,n=t.onClick,r=t.disableClick;n&&n.call(this,e),r||e.isDefaultPrevented()||(e.stopPropagation(),!function(){var e=arguments.length>0&&void 0!==arguments[0]?arguments[0]:window.navigator.userAgent;return function(e){return-1!==e.indexOf("MSIE")||-1!==e.indexOf("Trident/")}(e)||function(e){return-1!==e.indexOf("Edge/")}(e)}()?this.open():setTimeout(this.open,0))}},{key:"onInputElementClick",value:function(e){e.stopPropagation(),this.props.inputProps&&this.props.inputProps.onClick&&this.props.inputProps.onClick(e)}},{key:"onFileDialogCancel",value:function(){var e=this,t=this.props.onFileDialogCancel;this.isFileDialogActive&&setTimeout(function(){null!=e.fileInputEl&&(e.fileInputEl.files.length||(e.isFileDialogActive=!1));"function"==typeof t&&t()},300)}},{key:"setRef",value:function(e){this.node=e}},{key:"setRefs",value:function(e){this.fileInputEl=e}},{key:"open",value:function(){this.isFileDialogActive=!0,this.fileInputEl.value=null,this.fileInputEl.click()}},{key:"render",value:function(){var t=this.props,n=t.accept,r=t.acceptClassName,o=t.activeClassName,i=t.children,a=t.disabled,s=t.disabledClassName,l=t.inputProps,d=t.multiple,v=t.name,D=t.rejectClassName,x=u(t,["accept","acceptClassName","activeClassName","children","disabled","disabledClassName","inputProps","multiple","name","rejectClassName"]),S=x.acceptStyle,C=x.activeStyle,E=x.className,O=void 0===E?"":E,w=x.disabledStyle,j=x.rejectStyle,k=x.style,P=u(x,["acceptStyle","activeStyle","className","disabledStyle","rejectStyle","style"]),F=this.state,A=F.isDragActive,T=F.draggedFiles,_=T.length,I=d||_<=1,L=_>0&&function(e,t){return e.every(function(e){return f(e,t)})}(T,this.props.accept),R=_>0&&(!L||!I),N=!(O||k||C||S||j||w);A&&o&&(O+=" "+o),L&&r&&(O+=" "+r),R&&D&&(O+=" "+D),a&&s&&(O+=" "+s),N&&(k=m,C=h,S=g,j=y,w=b);var z=c({position:"relative"},k);C&&A&&(z=c({},z,C)),S&&L&&(z=c({},z,S)),j&&R&&(z=c({},z,j)),w&&a&&(z=c({},z,w));var M={accept:n,disabled:a,type:"file",style:c({position:"absolute",top:0,right:0,bottom:0,left:0,opacity:1e-5,pointerEvents:"none"},l.style),multiple:p&&d,ref:this.setRefs,onChange:this.onDrop,autoComplete:"off"};v&&v.length&&(M.name=v);var W=u(P,["acceptedFiles","preventDropOnDocument","disablePreview","disableClick","onDropAccepted","onDropRejected","onFileDialogCancel","maxSize","minSize","getDataTransferItems"]);return e.createElement("div",c({className:O,style:z},W,{onClick:this.composeHandlers(this.onClick),onDragStart:this.composeHandlers(this.onDragStart),onDragEnter:this.composeHandlers(this.onDragEnter),onDragOver:this.composeHandlers(this.onDragOver),onDragLeave:this.composeHandlers(this.onDragLeave),onDrop:this.composeHandlers(this.onDrop),ref:this.setRef,"aria-disabled":a}),this.renderChildren(i,A,L,R),e.createElement("input",c({},l,M)))}}]),n}();return D.propTypes={accept:t.oneOfType([t.string,t.arrayOf(t.string)]),children:t.oneOfType([t.node,t.func]),disableClick:t.bool,disabled:t.bool,disablePreview:t.bool,preventDropOnDocument:t.bool,inputProps:t.object,multiple:t.bool,name:t.string,maxSize:t.number,minSize:t.number,className:t.string,activeClassName:t.string,acceptClassName:t.string,rejectClassName:t.string,disabledClassName:t.string,style:t.object,activeStyle:t.object,acceptStyle:t.object,rejectStyle:t.object,disabledStyle:t.object,getDataTransferItems:t.func,onClick:t.func,onDrop:t.func,onDropAccepted:t.func,onDropRejected:t.func,onDragStart:t.func,onDragEnter:t.func,onDragOver:t.func,onDragLeave:t.func,onFileDialogCancel:t.func},D.defaultProps={preventDropOnDocument:!0,disabled:!1,disablePreview:!1,disableClick:!1,inputProps:{},multiple:!0,maxSize:1/0,minSize:0,getDataTransferItems:function(e){var t=[];if(e.dataTransfer){var n=e.dataTransfer;n.files&&n.files.length?t=n.files:n.items&&n.items.length&&(t=n.items)}else e.target&&e.target.files&&(t=e.target.files);return Array.prototype.slice.call(t)}},D});
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiaW5kZXguanMiLCJzb3VyY2VzIjpbIi4uL25vZGVfbW9kdWxlcy9hdHRyLWFjY2VwdC9kaXN0L2luZGV4LmpzIiwiLi4vc3JjL3V0aWxzL2luZGV4LmpzIiwiLi4vc3JjL3V0aWxzL3N0eWxlcy5qcyIsIi4uL3NyYy9pbmRleC5qcyJdLCJzb3VyY2VzQ29udGVudCI6WyJtb2R1bGUuZXhwb3J0cz1mdW5jdGlvbih0KXtmdW5jdGlvbiBuKGUpe2lmKHJbZV0pcmV0dXJuIHJbZV0uZXhwb3J0czt2YXIgbz1yW2VdPXtpOmUsbDohMSxleHBvcnRzOnt9fTtyZXR1cm4gdFtlXS5jYWxsKG8uZXhwb3J0cyxvLG8uZXhwb3J0cyxuKSxvLmw9ITAsby5leHBvcnRzfXZhciByPXt9O3JldHVybiBuLm09dCxuLmM9cixuLmQ9ZnVuY3Rpb24odCxyLGUpe24ubyh0LHIpfHxPYmplY3QuZGVmaW5lUHJvcGVydHkodCxyLHtjb25maWd1cmFibGU6ITEsZW51bWVyYWJsZTohMCxnZXQ6ZX0pfSxuLm49ZnVuY3Rpb24odCl7dmFyIHI9dCYmdC5fX2VzTW9kdWxlP2Z1bmN0aW9uKCl7cmV0dXJuIHQuZGVmYXVsdH06ZnVuY3Rpb24oKXtyZXR1cm4gdH07cmV0dXJuIG4uZChyLFwiYVwiLHIpLHJ9LG4ubz1mdW5jdGlvbih0LG4pe3JldHVybiBPYmplY3QucHJvdG90eXBlLmhhc093blByb3BlcnR5LmNhbGwodCxuKX0sbi5wPVwiXCIsbihuLnM9MTMpfShbZnVuY3Rpb24odCxuKXt2YXIgcj10LmV4cG9ydHM9XCJ1bmRlZmluZWRcIiE9dHlwZW9mIHdpbmRvdyYmd2luZG93Lk1hdGg9PU1hdGg/d2luZG93OlwidW5kZWZpbmVkXCIhPXR5cGVvZiBzZWxmJiZzZWxmLk1hdGg9PU1hdGg/c2VsZjpGdW5jdGlvbihcInJldHVybiB0aGlzXCIpKCk7XCJudW1iZXJcIj09dHlwZW9mIF9fZyYmKF9fZz1yKX0sZnVuY3Rpb24odCxuKXt0LmV4cG9ydHM9ZnVuY3Rpb24odCl7cmV0dXJuXCJvYmplY3RcIj09dHlwZW9mIHQ/bnVsbCE9PXQ6XCJmdW5jdGlvblwiPT10eXBlb2YgdH19LGZ1bmN0aW9uKHQsbil7dmFyIHI9dC5leHBvcnRzPXt2ZXJzaW9uOlwiMi41LjBcIn07XCJudW1iZXJcIj09dHlwZW9mIF9fZSYmKF9fZT1yKX0sZnVuY3Rpb24odCxuLHIpe3QuZXhwb3J0cz0hcig0KShmdW5jdGlvbigpe3JldHVybiA3IT1PYmplY3QuZGVmaW5lUHJvcGVydHkoe30sXCJhXCIse2dldDpmdW5jdGlvbigpe3JldHVybiA3fX0pLmF9KX0sZnVuY3Rpb24odCxuKXt0LmV4cG9ydHM9ZnVuY3Rpb24odCl7dHJ5e3JldHVybiEhdCgpfWNhdGNoKHQpe3JldHVybiEwfX19LGZ1bmN0aW9uKHQsbil7dmFyIHI9e30udG9TdHJpbmc7dC5leHBvcnRzPWZ1bmN0aW9uKHQpe3JldHVybiByLmNhbGwodCkuc2xpY2UoOCwtMSl9fSxmdW5jdGlvbih0LG4scil7dmFyIGU9cigzMikoXCJ3a3NcIiksbz1yKDkpLGk9cigwKS5TeW1ib2wsdT1cImZ1bmN0aW9uXCI9PXR5cGVvZiBpOyh0LmV4cG9ydHM9ZnVuY3Rpb24odCl7cmV0dXJuIGVbdF18fChlW3RdPXUmJmlbdF18fCh1P2k6bykoXCJTeW1ib2wuXCIrdCkpfSkuc3RvcmU9ZX0sZnVuY3Rpb24odCxuLHIpe3ZhciBlPXIoMCksbz1yKDIpLGk9cig4KSx1PXIoMjIpLGM9cigxMCksZj1mdW5jdGlvbih0LG4scil7dmFyIGEscyxwLGwsdj10JmYuRix5PXQmZi5HLGg9dCZmLlMsZD10JmYuUCx4PXQmZi5CLGc9eT9lOmg/ZVtuXXx8KGVbbl09e30pOihlW25dfHx7fSkucHJvdG90eXBlLG09eT9vOm9bbl18fChvW25dPXt9KSxiPW0ucHJvdG90eXBlfHwobS5wcm90b3R5cGU9e30pO3kmJihyPW4pO2ZvcihhIGluIHIpcz0hdiYmZyYmdm9pZCAwIT09Z1thXSxwPShzP2c6cilbYV0sbD14JiZzP2MocCxlKTpkJiZcImZ1bmN0aW9uXCI9PXR5cGVvZiBwP2MoRnVuY3Rpb24uY2FsbCxwKTpwLGcmJnUoZyxhLHAsdCZmLlUpLG1bYV0hPXAmJmkobSxhLGwpLGQmJmJbYV0hPXAmJihiW2FdPXApfTtlLmNvcmU9byxmLkY9MSxmLkc9MixmLlM9NCxmLlA9OCxmLkI9MTYsZi5XPTMyLGYuVT02NCxmLlI9MTI4LHQuZXhwb3J0cz1mfSxmdW5jdGlvbih0LG4scil7dmFyIGU9cigxNiksbz1yKDIxKTt0LmV4cG9ydHM9cigzKT9mdW5jdGlvbih0LG4scil7cmV0dXJuIGUuZih0LG4sbygxLHIpKX06ZnVuY3Rpb24odCxuLHIpe3JldHVybiB0W25dPXIsdH19LGZ1bmN0aW9uKHQsbil7dmFyIHI9MCxlPU1hdGgucmFuZG9tKCk7dC5leHBvcnRzPWZ1bmN0aW9uKHQpe3JldHVyblwiU3ltYm9sKFwiLmNvbmNhdCh2b2lkIDA9PT10P1wiXCI6dCxcIilfXCIsKCsrcitlKS50b1N0cmluZygzNikpfX0sZnVuY3Rpb24odCxuLHIpe3ZhciBlPXIoMjQpO3QuZXhwb3J0cz1mdW5jdGlvbih0LG4scil7aWYoZSh0KSx2b2lkIDA9PT1uKXJldHVybiB0O3N3aXRjaChyKXtjYXNlIDE6cmV0dXJuIGZ1bmN0aW9uKHIpe3JldHVybiB0LmNhbGwobixyKX07Y2FzZSAyOnJldHVybiBmdW5jdGlvbihyLGUpe3JldHVybiB0LmNhbGwobixyLGUpfTtjYXNlIDM6cmV0dXJuIGZ1bmN0aW9uKHIsZSxvKXtyZXR1cm4gdC5jYWxsKG4scixlLG8pfX1yZXR1cm4gZnVuY3Rpb24oKXtyZXR1cm4gdC5hcHBseShuLGFyZ3VtZW50cyl9fX0sZnVuY3Rpb24odCxuKXt0LmV4cG9ydHM9ZnVuY3Rpb24odCl7aWYodm9pZCAwPT10KXRocm93IFR5cGVFcnJvcihcIkNhbid0IGNhbGwgbWV0aG9kIG9uICBcIit0KTtyZXR1cm4gdH19LGZ1bmN0aW9uKHQsbixyKXt2YXIgZT1yKDI4KSxvPU1hdGgubWluO3QuZXhwb3J0cz1mdW5jdGlvbih0KXtyZXR1cm4gdD4wP28oZSh0KSw5MDA3MTk5MjU0NzQwOTkxKTowfX0sZnVuY3Rpb24odCxuLHIpe1widXNlIHN0cmljdFwiO24uX19lc01vZHVsZT0hMCxuLmRlZmF1bHQ9ZnVuY3Rpb24odCxuKXtpZih0JiZuKXt2YXIgcj1BcnJheS5pc0FycmF5KG4pP246bi5zcGxpdChcIixcIiksZT10Lm5hbWV8fFwiXCIsbz10LnR5cGV8fFwiXCIsaT1vLnJlcGxhY2UoL1xcLy4qJC8sXCJcIik7cmV0dXJuIHIuc29tZShmdW5jdGlvbih0KXt2YXIgbj10LnRyaW0oKTtyZXR1cm5cIi5cIj09PW4uY2hhckF0KDApP2UudG9Mb3dlckNhc2UoKS5lbmRzV2l0aChuLnRvTG93ZXJDYXNlKCkpOm4uZW5kc1dpdGgoXCIvKlwiKT9pPT09bi5yZXBsYWNlKC9cXC8uKiQvLFwiXCIpOm89PT1ufSl9cmV0dXJuITB9LHIoMTQpLHIoMzQpfSxmdW5jdGlvbih0LG4scil7cigxNSksdC5leHBvcnRzPXIoMikuQXJyYXkuc29tZX0sZnVuY3Rpb24odCxuLHIpe1widXNlIHN0cmljdFwiO3ZhciBlPXIoNyksbz1yKDI1KSgzKTtlKGUuUCtlLkYqIXIoMzMpKFtdLnNvbWUsITApLFwiQXJyYXlcIix7c29tZTpmdW5jdGlvbih0KXtyZXR1cm4gbyh0aGlzLHQsYXJndW1lbnRzWzFdKX19KX0sZnVuY3Rpb24odCxuLHIpe3ZhciBlPXIoMTcpLG89cigxOCksaT1yKDIwKSx1PU9iamVjdC5kZWZpbmVQcm9wZXJ0eTtuLmY9cigzKT9PYmplY3QuZGVmaW5lUHJvcGVydHk6ZnVuY3Rpb24odCxuLHIpe2lmKGUodCksbj1pKG4sITApLGUociksbyl0cnl7cmV0dXJuIHUodCxuLHIpfWNhdGNoKHQpe31pZihcImdldFwiaW4gcnx8XCJzZXRcImluIHIpdGhyb3cgVHlwZUVycm9yKFwiQWNjZXNzb3JzIG5vdCBzdXBwb3J0ZWQhXCIpO3JldHVyblwidmFsdWVcImluIHImJih0W25dPXIudmFsdWUpLHR9fSxmdW5jdGlvbih0LG4scil7dmFyIGU9cigxKTt0LmV4cG9ydHM9ZnVuY3Rpb24odCl7aWYoIWUodCkpdGhyb3cgVHlwZUVycm9yKHQrXCIgaXMgbm90IGFuIG9iamVjdCFcIik7cmV0dXJuIHR9fSxmdW5jdGlvbih0LG4scil7dC5leHBvcnRzPSFyKDMpJiYhcig0KShmdW5jdGlvbigpe3JldHVybiA3IT1PYmplY3QuZGVmaW5lUHJvcGVydHkocigxOSkoXCJkaXZcIiksXCJhXCIse2dldDpmdW5jdGlvbigpe3JldHVybiA3fX0pLmF9KX0sZnVuY3Rpb24odCxuLHIpe3ZhciBlPXIoMSksbz1yKDApLmRvY3VtZW50LGk9ZShvKSYmZShvLmNyZWF0ZUVsZW1lbnQpO3QuZXhwb3J0cz1mdW5jdGlvbih0KXtyZXR1cm4gaT9vLmNyZWF0ZUVsZW1lbnQodCk6e319fSxmdW5jdGlvbih0LG4scil7dmFyIGU9cigxKTt0LmV4cG9ydHM9ZnVuY3Rpb24odCxuKXtpZighZSh0KSlyZXR1cm4gdDt2YXIgcixvO2lmKG4mJlwiZnVuY3Rpb25cIj09dHlwZW9mKHI9dC50b1N0cmluZykmJiFlKG89ci5jYWxsKHQpKSlyZXR1cm4gbztpZihcImZ1bmN0aW9uXCI9PXR5cGVvZihyPXQudmFsdWVPZikmJiFlKG89ci5jYWxsKHQpKSlyZXR1cm4gbztpZighbiYmXCJmdW5jdGlvblwiPT10eXBlb2Yocj10LnRvU3RyaW5nKSYmIWUobz1yLmNhbGwodCkpKXJldHVybiBvO3Rocm93IFR5cGVFcnJvcihcIkNhbid0IGNvbnZlcnQgb2JqZWN0IHRvIHByaW1pdGl2ZSB2YWx1ZVwiKX19LGZ1bmN0aW9uKHQsbil7dC5leHBvcnRzPWZ1bmN0aW9uKHQsbil7cmV0dXJue2VudW1lcmFibGU6ISgxJnQpLGNvbmZpZ3VyYWJsZTohKDImdCksd3JpdGFibGU6ISg0JnQpLHZhbHVlOm59fX0sZnVuY3Rpb24odCxuLHIpe3ZhciBlPXIoMCksbz1yKDgpLGk9cigyMyksdT1yKDkpKFwic3JjXCIpLGM9RnVuY3Rpb24udG9TdHJpbmcsZj0oXCJcIitjKS5zcGxpdChcInRvU3RyaW5nXCIpO3IoMikuaW5zcGVjdFNvdXJjZT1mdW5jdGlvbih0KXtyZXR1cm4gYy5jYWxsKHQpfSwodC5leHBvcnRzPWZ1bmN0aW9uKHQsbixyLGMpe3ZhciBhPVwiZnVuY3Rpb25cIj09dHlwZW9mIHI7YSYmKGkocixcIm5hbWVcIil8fG8ocixcIm5hbWVcIixuKSksdFtuXSE9PXImJihhJiYoaShyLHUpfHxvKHIsdSx0W25dP1wiXCIrdFtuXTpmLmpvaW4oU3RyaW5nKG4pKSkpLHQ9PT1lP3Rbbl09cjpjP3Rbbl0/dFtuXT1yOm8odCxuLHIpOihkZWxldGUgdFtuXSxvKHQsbixyKSkpfSkoRnVuY3Rpb24ucHJvdG90eXBlLFwidG9TdHJpbmdcIixmdW5jdGlvbigpe3JldHVyblwiZnVuY3Rpb25cIj09dHlwZW9mIHRoaXMmJnRoaXNbdV18fGMuY2FsbCh0aGlzKX0pfSxmdW5jdGlvbih0LG4pe3ZhciByPXt9Lmhhc093blByb3BlcnR5O3QuZXhwb3J0cz1mdW5jdGlvbih0LG4pe3JldHVybiByLmNhbGwodCxuKX19LGZ1bmN0aW9uKHQsbil7dC5leHBvcnRzPWZ1bmN0aW9uKHQpe2lmKFwiZnVuY3Rpb25cIiE9dHlwZW9mIHQpdGhyb3cgVHlwZUVycm9yKHQrXCIgaXMgbm90IGEgZnVuY3Rpb24hXCIpO3JldHVybiB0fX0sZnVuY3Rpb24odCxuLHIpe3ZhciBlPXIoMTApLG89cigyNiksaT1yKDI3KSx1PXIoMTIpLGM9cigyOSk7dC5leHBvcnRzPWZ1bmN0aW9uKHQsbil7dmFyIHI9MT09dCxmPTI9PXQsYT0zPT10LHM9ND09dCxwPTY9PXQsbD01PT10fHxwLHY9bnx8YztyZXR1cm4gZnVuY3Rpb24obixjLHkpe2Zvcih2YXIgaCxkLHg9aShuKSxnPW8oeCksbT1lKGMseSwzKSxiPXUoZy5sZW5ndGgpLF89MCx3PXI/dihuLGIpOmY/dihuLDApOnZvaWQgMDtiPl87XysrKWlmKChsfHxfIGluIGcpJiYoaD1nW19dLGQ9bShoLF8seCksdCkpaWYocil3W19dPWQ7ZWxzZSBpZihkKXN3aXRjaCh0KXtjYXNlIDM6cmV0dXJuITA7Y2FzZSA1OnJldHVybiBoO2Nhc2UgNjpyZXR1cm4gXztjYXNlIDI6dy5wdXNoKGgpfWVsc2UgaWYocylyZXR1cm4hMTtyZXR1cm4gcD8tMTphfHxzP3M6d319fSxmdW5jdGlvbih0LG4scil7dmFyIGU9cig1KTt0LmV4cG9ydHM9T2JqZWN0KFwielwiKS5wcm9wZXJ0eUlzRW51bWVyYWJsZSgwKT9PYmplY3Q6ZnVuY3Rpb24odCl7cmV0dXJuXCJTdHJpbmdcIj09ZSh0KT90LnNwbGl0KFwiXCIpOk9iamVjdCh0KX19LGZ1bmN0aW9uKHQsbixyKXt2YXIgZT1yKDExKTt0LmV4cG9ydHM9ZnVuY3Rpb24odCl7cmV0dXJuIE9iamVjdChlKHQpKX19LGZ1bmN0aW9uKHQsbil7dmFyIHI9TWF0aC5jZWlsLGU9TWF0aC5mbG9vcjt0LmV4cG9ydHM9ZnVuY3Rpb24odCl7cmV0dXJuIGlzTmFOKHQ9K3QpPzA6KHQ+MD9lOnIpKHQpfX0sZnVuY3Rpb24odCxuLHIpe3ZhciBlPXIoMzApO3QuZXhwb3J0cz1mdW5jdGlvbih0LG4pe3JldHVybiBuZXcoZSh0KSkobil9fSxmdW5jdGlvbih0LG4scil7dmFyIGU9cigxKSxvPXIoMzEpLGk9cig2KShcInNwZWNpZXNcIik7dC5leHBvcnRzPWZ1bmN0aW9uKHQpe3ZhciBuO3JldHVybiBvKHQpJiYobj10LmNvbnN0cnVjdG9yLFwiZnVuY3Rpb25cIiE9dHlwZW9mIG58fG4hPT1BcnJheSYmIW8obi5wcm90b3R5cGUpfHwobj12b2lkIDApLGUobikmJm51bGw9PT0obj1uW2ldKSYmKG49dm9pZCAwKSksdm9pZCAwPT09bj9BcnJheTpufX0sZnVuY3Rpb24odCxuLHIpe3ZhciBlPXIoNSk7dC5leHBvcnRzPUFycmF5LmlzQXJyYXl8fGZ1bmN0aW9uKHQpe3JldHVyblwiQXJyYXlcIj09ZSh0KX19LGZ1bmN0aW9uKHQsbixyKXt2YXIgZT1yKDApLG89ZVtcIl9fY29yZS1qc19zaGFyZWRfX1wiXXx8KGVbXCJfX2NvcmUtanNfc2hhcmVkX19cIl09e30pO3QuZXhwb3J0cz1mdW5jdGlvbih0KXtyZXR1cm4gb1t0XXx8KG9bdF09e30pfX0sZnVuY3Rpb24odCxuLHIpe1widXNlIHN0cmljdFwiO3ZhciBlPXIoNCk7dC5leHBvcnRzPWZ1bmN0aW9uKHQsbil7cmV0dXJuISF0JiZlKGZ1bmN0aW9uKCl7bj90LmNhbGwobnVsbCxmdW5jdGlvbigpe30sMSk6dC5jYWxsKG51bGwpfSl9fSxmdW5jdGlvbih0LG4scil7cigzNSksdC5leHBvcnRzPXIoMikuU3RyaW5nLmVuZHNXaXRofSxmdW5jdGlvbih0LG4scil7XCJ1c2Ugc3RyaWN0XCI7dmFyIGU9cig3KSxvPXIoMTIpLGk9cigzNiksdT1cIlwiLmVuZHNXaXRoO2UoZS5QK2UuRipyKDM4KShcImVuZHNXaXRoXCIpLFwiU3RyaW5nXCIse2VuZHNXaXRoOmZ1bmN0aW9uKHQpe3ZhciBuPWkodGhpcyx0LFwiZW5kc1dpdGhcIikscj1hcmd1bWVudHMubGVuZ3RoPjE/YXJndW1lbnRzWzFdOnZvaWQgMCxlPW8obi5sZW5ndGgpLGM9dm9pZCAwPT09cj9lOk1hdGgubWluKG8ociksZSksZj1TdHJpbmcodCk7cmV0dXJuIHU/dS5jYWxsKG4sZixjKTpuLnNsaWNlKGMtZi5sZW5ndGgsYyk9PT1mfX0pfSxmdW5jdGlvbih0LG4scil7dmFyIGU9cigzNyksbz1yKDExKTt0LmV4cG9ydHM9ZnVuY3Rpb24odCxuLHIpe2lmKGUobikpdGhyb3cgVHlwZUVycm9yKFwiU3RyaW5nI1wiK3IrXCIgZG9lc24ndCBhY2NlcHQgcmVnZXghXCIpO3JldHVybiBTdHJpbmcobyh0KSl9fSxmdW5jdGlvbih0LG4scil7dmFyIGU9cigxKSxvPXIoNSksaT1yKDYpKFwibWF0Y2hcIik7dC5leHBvcnRzPWZ1bmN0aW9uKHQpe3ZhciBuO3JldHVybiBlKHQpJiYodm9pZCAwIT09KG49dFtpXSk/ISFuOlwiUmVnRXhwXCI9PW8odCkpfX0sZnVuY3Rpb24odCxuLHIpe3ZhciBlPXIoNikoXCJtYXRjaFwiKTt0LmV4cG9ydHM9ZnVuY3Rpb24odCl7dmFyIG49Ly4vO3RyeXtcIi8uL1wiW3RdKG4pfWNhdGNoKHIpe3RyeXtyZXR1cm4gbltlXT0hMSwhXCIvLi9cIlt0XShuKX1jYXRjaCh0KXt9fXJldHVybiEwfX1dKTsiLCJpbXBvcnQgYWNjZXB0cyBmcm9tICdhdHRyLWFjY2VwdCdcblxuZXhwb3J0IGNvbnN0IHN1cHBvcnRNdWx0aXBsZSA9XG4gIHR5cGVvZiBkb2N1bWVudCAhPT0gJ3VuZGVmaW5lZCcgJiYgZG9jdW1lbnQgJiYgZG9jdW1lbnQuY3JlYXRlRWxlbWVudFxuICAgID8gJ211bHRpcGxlJyBpbiBkb2N1bWVudC5jcmVhdGVFbGVtZW50KCdpbnB1dCcpXG4gICAgOiB0cnVlXG5cbmV4cG9ydCBmdW5jdGlvbiBnZXREYXRhVHJhbnNmZXJJdGVtcyhldmVudCkge1xuICBsZXQgZGF0YVRyYW5zZmVySXRlbXNMaXN0ID0gW11cbiAgaWYgKGV2ZW50LmRhdGFUcmFuc2Zlcikge1xuICAgIGNvbnN0IGR0ID0gZXZlbnQuZGF0YVRyYW5zZmVyXG5cbiAgICAvLyBOT1RFOiBPbmx5IHRoZSAnZHJvcCcgZXZlbnQgaGFzIGFjY2VzcyB0byBEYXRhVHJhbnNmZXIuZmlsZXMsXG4gICAgLy8gb3RoZXJ3aXNlIGl0IHdpbGwgYWx3YXlzIGJlIGVtcHR5XG4gICAgaWYgKGR0LmZpbGVzICYmIGR0LmZpbGVzLmxlbmd0aCkge1xuICAgICAgZGF0YVRyYW5zZmVySXRlbXNMaXN0ID0gZHQuZmlsZXNcbiAgICB9IGVsc2UgaWYgKGR0Lml0ZW1zICYmIGR0Lml0ZW1zLmxlbmd0aCkge1xuICAgICAgLy8gRHVyaW5nIHRoZSBkcmFnIGV2ZW4gdGhlIGRhdGFUcmFuc2Zlci5maWxlcyBpcyBudWxsXG4gICAgICAvLyBidXQgQ2hyb21lIGltcGxlbWVudHMgc29tZSBkcmFnIHN0b3JlLCB3aGljaCBpcyBhY2Nlc2libGUgdmlhIGRhdGFUcmFuc2Zlci5pdGVtc1xuICAgICAgZGF0YVRyYW5zZmVySXRlbXNMaXN0ID0gZHQuaXRlbXNcbiAgICB9XG4gIH0gZWxzZSBpZiAoZXZlbnQudGFyZ2V0ICYmIGV2ZW50LnRhcmdldC5maWxlcykge1xuICAgIGRhdGFUcmFuc2Zlckl0ZW1zTGlzdCA9IGV2ZW50LnRhcmdldC5maWxlc1xuICB9XG5cbiAgLy8gQ29udmVydCBmcm9tIERhdGFUcmFuc2Zlckl0ZW1zTGlzdCB0byB0aGUgbmF0aXZlIEFycmF5XG4gIHJldHVybiBBcnJheS5wcm90b3R5cGUuc2xpY2UuY2FsbChkYXRhVHJhbnNmZXJJdGVtc0xpc3QpXG59XG5cbi8vIEZpcmVmb3ggdmVyc2lvbnMgcHJpb3IgdG8gNTMgcmV0dXJuIGEgYm9ndXMgTUlNRSB0eXBlIGZvciBldmVyeSBmaWxlIGRyYWcsIHNvIGRyYWdvdmVycyB3aXRoXG4vLyB0aGF0IE1JTUUgdHlwZSB3aWxsIGFsd2F5cyBiZSBhY2NlcHRlZFxuZXhwb3J0IGZ1bmN0aW9uIGZpbGVBY2NlcHRlZChmaWxlLCBhY2NlcHQpIHtcbiAgcmV0dXJuIGZpbGUudHlwZSA9PT0gJ2FwcGxpY2F0aW9uL3gtbW96LWZpbGUnIHx8IGFjY2VwdHMoZmlsZSwgYWNjZXB0KVxufVxuXG5leHBvcnQgZnVuY3Rpb24gZmlsZU1hdGNoU2l6ZShmaWxlLCBtYXhTaXplLCBtaW5TaXplKSB7XG4gIHJldHVybiBmaWxlLnNpemUgPD0gbWF4U2l6ZSAmJiBmaWxlLnNpemUgPj0gbWluU2l6ZVxufVxuXG5leHBvcnQgZnVuY3Rpb24gYWxsRmlsZXNBY2NlcHRlZChmaWxlcywgYWNjZXB0KSB7XG4gIHJldHVybiBmaWxlcy5ldmVyeShmaWxlID0+IGZpbGVBY2NlcHRlZChmaWxlLCBhY2NlcHQpKVxufVxuXG5leHBvcnQgZnVuY3Rpb24gaXNEcmFnRGF0YVdpdGhGaWxlcyhldnQpIHtcbiAgaWYgKCFldnQuZGF0YVRyYW5zZmVyKSB7XG4gICAgcmV0dXJuIHRydWVcbiAgfVxuICAvLyBodHRwczovL2RldmVsb3Blci5tb3ppbGxhLm9yZy9lbi1VUy9kb2NzL1dlYi9BUEkvRGF0YVRyYW5zZmVyL3R5cGVzXG4gIC8vIGh0dHBzOi8vZGV2ZWxvcGVyLm1vemlsbGEub3JnL2VuLVVTL2RvY3MvV2ViL0FQSS9IVE1MX0RyYWdfYW5kX0Ryb3BfQVBJL1JlY29tbWVuZGVkX2RyYWdfdHlwZXMjZmlsZVxuICByZXR1cm4gQXJyYXkucHJvdG90eXBlLmV2ZXJ5LmNhbGwoXG4gICAgZXZ0LmRhdGFUcmFuc2Zlci50eXBlcyxcbiAgICB0eXBlID0+IHR5cGUgPT09ICdGaWxlcycgfHwgdHlwZSA9PT0gJ2FwcGxpY2F0aW9uL3gtbW96LWZpbGUnXG4gIClcbn1cblxuZXhwb3J0IGZ1bmN0aW9uIGlzS2luZEZpbGUoaXRlbSkge1xuICByZXR1cm4gdHlwZW9mIGl0ZW0gPT09ICdvYmplY3QnICYmIGl0ZW0gIT09IG51bGwgJiYgaXRlbS5raW5kID09PSAnZmlsZSdcbn1cblxuLy8gYWxsb3cgdGhlIGVudGlyZSBkb2N1bWVudCB0byBiZSBhIGRyYWcgdGFyZ2V0XG5leHBvcnQgZnVuY3Rpb24gb25Eb2N1bWVudERyYWdPdmVyKGV2dCkge1xuICBldnQucHJldmVudERlZmF1bHQoKVxufVxuXG5mdW5jdGlvbiBpc0llKHVzZXJBZ2VudCkge1xuICByZXR1cm4gdXNlckFnZW50LmluZGV4T2YoJ01TSUUnKSAhPT0gLTEgfHwgdXNlckFnZW50LmluZGV4T2YoJ1RyaWRlbnQvJykgIT09IC0xXG59XG5cbmZ1bmN0aW9uIGlzRWRnZSh1c2VyQWdlbnQpIHtcbiAgcmV0dXJuIHVzZXJBZ2VudC5pbmRleE9mKCdFZGdlLycpICE9PSAtMVxufVxuXG5leHBvcnQgZnVuY3Rpb24gaXNJZU9yRWRnZSh1c2VyQWdlbnQgPSB3aW5kb3cubmF2aWdhdG9yLnVzZXJBZ2VudCkge1xuICByZXR1cm4gaXNJZSh1c2VyQWdlbnQpIHx8IGlzRWRnZSh1c2VyQWdlbnQpXG59XG4iLCJleHBvcnQgZGVmYXVsdCB7XG4gIGFjdGl2ZToge1xuICAgIGJvcmRlclN0eWxlOiAnc29saWQnLFxuICAgIGJhY2tncm91bmRDb2xvcjogJyNlZWUnXG4gIH0sXG4gIGFjY2VwdGVkOiB7XG4gICAgYm9yZGVyU3R5bGU6ICdzb2xpZCcsXG4gICAgYm9yZGVyQ29sb3I6ICcjNmM2JyxcbiAgICBiYWNrZ3JvdW5kQ29sb3I6ICcjZWVlJ1xuICB9LFxuICByZWplY3RlZDoge1xuICAgIGJvcmRlclN0eWxlOiAnc29saWQnLFxuICAgIGJvcmRlckNvbG9yOiAnI2M2NicsXG4gICAgYmFja2dyb3VuZENvbG9yOiAnI2VlZSdcbiAgfSxcbiAgZGVmYXVsdDoge1xuICAgIHdpZHRoOiAyMDAsXG4gICAgaGVpZ2h0OiAyMDAsXG4gICAgYm9yZGVyV2lkdGg6IDIsXG4gICAgYm9yZGVyQ29sb3I6ICcjNjY2JyxcbiAgICBib3JkZXJTdHlsZTogJ2Rhc2hlZCcsXG4gICAgYm9yZGVyUmFkaXVzOiA1XG4gIH0sXG4gIGRpc2FibGVkOiB7XG4gICAgb3BhY2l0eTogMC41XG4gIH1cbn1cbiIsIi8qIGVzbGludCBwcmVmZXItdGVtcGxhdGU6IDAgKi9cblxuaW1wb3J0IFJlYWN0IGZyb20gJ3JlYWN0J1xuaW1wb3J0IFByb3BUeXBlcyBmcm9tICdwcm9wLXR5cGVzJ1xuaW1wb3J0IHtcbiAgaXNEcmFnRGF0YVdpdGhGaWxlcyxcbiAgc3VwcG9ydE11bHRpcGxlLFxuICBmaWxlQWNjZXB0ZWQsXG4gIGFsbEZpbGVzQWNjZXB0ZWQsXG4gIGZpbGVNYXRjaFNpemUsXG4gIG9uRG9jdW1lbnREcmFnT3ZlcixcbiAgZ2V0RGF0YVRyYW5zZmVySXRlbXMgYXMgZGVmYXVsdEdldERhdGFUcmFuc2Zlckl0ZW0sXG4gIGlzSWVPckVkZ2Vcbn0gZnJvbSAnLi91dGlscydcbmltcG9ydCBzdHlsZXMgZnJvbSAnLi91dGlscy9zdHlsZXMnXG5cbmNsYXNzIERyb3B6b25lIGV4dGVuZHMgUmVhY3QuQ29tcG9uZW50IHtcbiAgY29uc3RydWN0b3IocHJvcHMsIGNvbnRleHQpIHtcbiAgICBzdXBlcihwcm9wcywgY29udGV4dClcbiAgICB0aGlzLmNvbXBvc2VIYW5kbGVycyA9IHRoaXMuY29tcG9zZUhhbmRsZXJzLmJpbmQodGhpcylcbiAgICB0aGlzLm9uQ2xpY2sgPSB0aGlzLm9uQ2xpY2suYmluZCh0aGlzKVxuICAgIHRoaXMub25Eb2N1bWVudERyb3AgPSB0aGlzLm9uRG9jdW1lbnREcm9wLmJpbmQodGhpcylcbiAgICB0aGlzLm9uRHJhZ0VudGVyID0gdGhpcy5vbkRyYWdFbnRlci5iaW5kKHRoaXMpXG4gICAgdGhpcy5vbkRyYWdMZWF2ZSA9IHRoaXMub25EcmFnTGVhdmUuYmluZCh0aGlzKVxuICAgIHRoaXMub25EcmFnT3ZlciA9IHRoaXMub25EcmFnT3Zlci5iaW5kKHRoaXMpXG4gICAgdGhpcy5vbkRyYWdTdGFydCA9IHRoaXMub25EcmFnU3RhcnQuYmluZCh0aGlzKVxuICAgIHRoaXMub25Ecm9wID0gdGhpcy5vbkRyb3AuYmluZCh0aGlzKVxuICAgIHRoaXMub25GaWxlRGlhbG9nQ2FuY2VsID0gdGhpcy5vbkZpbGVEaWFsb2dDYW5jZWwuYmluZCh0aGlzKVxuICAgIHRoaXMub25JbnB1dEVsZW1lbnRDbGljayA9IHRoaXMub25JbnB1dEVsZW1lbnRDbGljay5iaW5kKHRoaXMpXG4gICAgdGhpcy5vcGVuID0gdGhpcy5vcGVuLmJpbmQodGhpcylcblxuICAgIHRoaXMuc2V0UmVmID0gdGhpcy5zZXRSZWYuYmluZCh0aGlzKVxuICAgIHRoaXMuc2V0UmVmcyA9IHRoaXMuc2V0UmVmcy5iaW5kKHRoaXMpXG5cbiAgICB0aGlzLmlzRmlsZURpYWxvZ0FjdGl2ZSA9IGZhbHNlXG5cbiAgICB0aGlzLnN0YXRlID0ge1xuICAgICAgZHJhZ2dlZEZpbGVzOiBbXSxcbiAgICAgIGFjY2VwdGVkRmlsZXM6IFtdLFxuICAgICAgcmVqZWN0ZWRGaWxlczogW11cbiAgICB9XG4gIH1cblxuICBjb21wb25lbnREaWRNb3VudCgpIHtcbiAgICBjb25zdCB7IHByZXZlbnREcm9wT25Eb2N1bWVudCB9ID0gdGhpcy5wcm9wc1xuICAgIHRoaXMuZHJhZ1RhcmdldHMgPSBbXVxuXG4gICAgaWYgKHByZXZlbnREcm9wT25Eb2N1bWVudCkge1xuICAgICAgZG9jdW1lbnQuYWRkRXZlbnRMaXN0ZW5lcignZHJhZ292ZXInLCBvbkRvY3VtZW50RHJhZ092ZXIsIGZhbHNlKVxuICAgICAgZG9jdW1lbnQuYWRkRXZlbnRMaXN0ZW5lcignZHJvcCcsIHRoaXMub25Eb2N1bWVudERyb3AsIGZhbHNlKVxuICAgIH1cbiAgICBpZiAodGhpcy5maWxlSW5wdXRFbCAhPSBudWxsKSB7XG4gICAgICB0aGlzLmZpbGVJbnB1dEVsLmFkZEV2ZW50TGlzdGVuZXIoJ2NsaWNrJywgdGhpcy5vbklucHV0RWxlbWVudENsaWNrLCBmYWxzZSlcbiAgICB9XG4gICAgd2luZG93LmFkZEV2ZW50TGlzdGVuZXIoJ2ZvY3VzJywgdGhpcy5vbkZpbGVEaWFsb2dDYW5jZWwsIGZhbHNlKVxuICB9XG5cbiAgY29tcG9uZW50V2lsbFVubW91bnQoKSB7XG4gICAgY29uc3QgeyBwcmV2ZW50RHJvcE9uRG9jdW1lbnQgfSA9IHRoaXMucHJvcHNcbiAgICBpZiAocHJldmVudERyb3BPbkRvY3VtZW50KSB7XG4gICAgICBkb2N1bWVudC5yZW1vdmVFdmVudExpc3RlbmVyKCdkcmFnb3ZlcicsIG9uRG9jdW1lbnREcmFnT3ZlcilcbiAgICAgIGRvY3VtZW50LnJlbW92ZUV2ZW50TGlzdGVuZXIoJ2Ryb3AnLCB0aGlzLm9uRG9jdW1lbnREcm9wKVxuICAgIH1cbiAgICBpZiAodGhpcy5maWxlSW5wdXRFbCAhPSBudWxsKSB7XG4gICAgICB0aGlzLmZpbGVJbnB1dEVsLnJlbW92ZUV2ZW50TGlzdGVuZXIoJ2NsaWNrJywgdGhpcy5vbklucHV0RWxlbWVudENsaWNrLCBmYWxzZSlcbiAgICB9XG4gICAgd2luZG93LnJlbW92ZUV2ZW50TGlzdGVuZXIoJ2ZvY3VzJywgdGhpcy5vbkZpbGVEaWFsb2dDYW5jZWwsIGZhbHNlKVxuICB9XG5cbiAgY29tcG9zZUhhbmRsZXJzKGhhbmRsZXIpIHtcbiAgICBpZiAodGhpcy5wcm9wcy5kaXNhYmxlZCkge1xuICAgICAgcmV0dXJuIG51bGxcbiAgICB9XG5cbiAgICByZXR1cm4gaGFuZGxlclxuICB9XG5cbiAgb25Eb2N1bWVudERyb3AoZXZ0KSB7XG4gICAgaWYgKHRoaXMubm9kZSAmJiB0aGlzLm5vZGUuY29udGFpbnMoZXZ0LnRhcmdldCkpIHtcbiAgICAgIC8vIGlmIHdlIGludGVyY2VwdGVkIGFuIGV2ZW50IGZvciBvdXIgaW5zdGFuY2UsIGxldCBpdCBwcm9wYWdhdGUgZG93biB0byB0aGUgaW5zdGFuY2UncyBvbkRyb3AgaGFuZGxlclxuICAgICAgcmV0dXJuXG4gICAgfVxuICAgIGV2dC5wcmV2ZW50RGVmYXVsdCgpXG4gICAgdGhpcy5kcmFnVGFyZ2V0cyA9IFtdXG4gIH1cblxuICBvbkRyYWdTdGFydChldnQpIHtcbiAgICBldnQucGVyc2lzdCgpXG4gICAgaWYgKHRoaXMucHJvcHMub25EcmFnU3RhcnQgJiYgaXNEcmFnRGF0YVdpdGhGaWxlcyhldnQpKSB7XG4gICAgICB0aGlzLnByb3BzLm9uRHJhZ1N0YXJ0LmNhbGwodGhpcywgZXZ0KVxuICAgIH1cbiAgfVxuXG4gIG9uRHJhZ0VudGVyKGV2dCkge1xuICAgIGV2dC5wcmV2ZW50RGVmYXVsdCgpXG5cbiAgICAvLyBDb3VudCB0aGUgZHJvcHpvbmUgYW5kIGFueSBjaGlsZHJlbiB0aGF0IGFyZSBlbnRlcmVkLlxuICAgIGlmICh0aGlzLmRyYWdUYXJnZXRzLmluZGV4T2YoZXZ0LnRhcmdldCkgPT09IC0xKSB7XG4gICAgICB0aGlzLmRyYWdUYXJnZXRzLnB1c2goZXZ0LnRhcmdldClcbiAgICB9XG5cbiAgICBldnQucGVyc2lzdCgpXG5cbiAgICBpZiAoaXNEcmFnRGF0YVdpdGhGaWxlcyhldnQpKSB7XG4gICAgICBQcm9taXNlLnJlc29sdmUodGhpcy5wcm9wcy5nZXREYXRhVHJhbnNmZXJJdGVtcyhldnQpKS50aGVuKGRyYWdnZWRGaWxlcyA9PiB7XG4gICAgICAgIGlmIChldnQuaXNQcm9wYWdhdGlvblN0b3BwZWQoKSkge1xuICAgICAgICAgIHJldHVyblxuICAgICAgICB9XG5cbiAgICAgICAgdGhpcy5zZXRTdGF0ZSh7XG4gICAgICAgICAgZHJhZ2dlZEZpbGVzLFxuICAgICAgICAgIC8vIERvIG5vdCByZWx5IG9uIGZpbGVzIGZvciB0aGUgZHJhZyBzdGF0ZS4gSXQgZG9lc24ndCB3b3JrIGluIFNhZmFyaS5cbiAgICAgICAgICBpc0RyYWdBY3RpdmU6IHRydWVcbiAgICAgICAgfSlcbiAgICAgIH0pXG5cbiAgICAgIGlmICh0aGlzLnByb3BzLm9uRHJhZ0VudGVyKSB7XG4gICAgICAgIHRoaXMucHJvcHMub25EcmFnRW50ZXIuY2FsbCh0aGlzLCBldnQpXG4gICAgICB9XG4gICAgfVxuICB9XG5cbiAgb25EcmFnT3ZlcihldnQpIHtcbiAgICAvLyBlc2xpbnQtZGlzYWJsZS1saW5lIGNsYXNzLW1ldGhvZHMtdXNlLXRoaXNcbiAgICBldnQucHJldmVudERlZmF1bHQoKVxuICAgIGV2dC5wZXJzaXN0KClcblxuICAgIHRyeSB7XG4gICAgICAvLyBUaGUgZmlsZSBkaWFsb2cgb24gQ2hyb21lIGFsbG93cyB1c2VycyB0byBkcmFnIGZpbGVzIGZyb20gdGhlIGRpYWxvZyBvbnRvXG4gICAgICAvLyB0aGUgZHJvcHpvbmUsIGNhdXNpbmcgdGhlIGJyb3dzZXIgdGhlIGNyYXNoIHdoZW4gdGhlIGZpbGUgZGlhbG9nIGlzIGNsb3NlZC5cbiAgICAgIC8vIEEgZHJvcCBlZmZlY3Qgb2YgJ25vbmUnIHByZXZlbnRzIHRoZSBmaWxlIGZyb20gYmVpbmcgZHJvcHBlZFxuICAgICAgZXZ0LmRhdGFUcmFuc2Zlci5kcm9wRWZmZWN0ID0gdGhpcy5pc0ZpbGVEaWFsb2dBY3RpdmUgPyAnbm9uZScgOiAnY29weScgLy8gZXNsaW50LWRpc2FibGUtbGluZSBuby1wYXJhbS1yZWFzc2lnblxuICAgIH0gY2F0Y2ggKGVycikge1xuICAgICAgLy8gY29udGludWUgcmVnYXJkbGVzcyBvZiBlcnJvclxuICAgIH1cblxuICAgIGlmICh0aGlzLnByb3BzLm9uRHJhZ092ZXIgJiYgaXNEcmFnRGF0YVdpdGhGaWxlcyhldnQpKSB7XG4gICAgICB0aGlzLnByb3BzLm9uRHJhZ092ZXIuY2FsbCh0aGlzLCBldnQpXG4gICAgfVxuXG4gICAgcmV0dXJuIGZhbHNlXG4gIH1cblxuICBvbkRyYWdMZWF2ZShldnQpIHtcbiAgICBldnQucHJldmVudERlZmF1bHQoKVxuICAgIGV2dC5wZXJzaXN0KClcblxuICAgIC8vIE9ubHkgZGVhY3RpdmF0ZSBvbmNlIHRoZSBkcm9wem9uZSBhbmQgYWxsIGNoaWxkcmVuIGhhdmUgYmVlbiBsZWZ0LlxuICAgIHRoaXMuZHJhZ1RhcmdldHMgPSB0aGlzLmRyYWdUYXJnZXRzLmZpbHRlcihlbCA9PiBlbCAhPT0gZXZ0LnRhcmdldCAmJiB0aGlzLm5vZGUuY29udGFpbnMoZWwpKVxuICAgIGlmICh0aGlzLmRyYWdUYXJnZXRzLmxlbmd0aCA+IDApIHtcbiAgICAgIHJldHVyblxuICAgIH1cblxuICAgIC8vIENsZWFyIGRyYWdnaW5nIGZpbGVzIHN0YXRlXG4gICAgdGhpcy5zZXRTdGF0ZSh7XG4gICAgICBpc0RyYWdBY3RpdmU6IGZhbHNlLFxuICAgICAgZHJhZ2dlZEZpbGVzOiBbXVxuICAgIH0pXG5cbiAgICBpZiAodGhpcy5wcm9wcy5vbkRyYWdMZWF2ZSAmJiBpc0RyYWdEYXRhV2l0aEZpbGVzKGV2dCkpIHtcbiAgICAgIHRoaXMucHJvcHMub25EcmFnTGVhdmUuY2FsbCh0aGlzLCBldnQpXG4gICAgfVxuICB9XG5cbiAgb25Ecm9wKGV2dCkge1xuICAgIGNvbnN0IHtcbiAgICAgIG9uRHJvcCxcbiAgICAgIG9uRHJvcEFjY2VwdGVkLFxuICAgICAgb25Ecm9wUmVqZWN0ZWQsXG4gICAgICBtdWx0aXBsZSxcbiAgICAgIGRpc2FibGVQcmV2aWV3LFxuICAgICAgYWNjZXB0LFxuICAgICAgZ2V0RGF0YVRyYW5zZmVySXRlbXNcbiAgICB9ID0gdGhpcy5wcm9wc1xuXG4gICAgLy8gU3RvcCBkZWZhdWx0IGJyb3dzZXIgYmVoYXZpb3JcbiAgICBldnQucHJldmVudERlZmF1bHQoKVxuXG4gICAgLy8gUGVyc2lzdCBldmVudCBmb3IgbGF0ZXIgdXNhZ2VcbiAgICBldnQucGVyc2lzdCgpXG5cbiAgICAvLyBSZXNldCB0aGUgY291bnRlciBhbG9uZyB3aXRoIHRoZSBkcmFnIG9uIGEgZHJvcC5cbiAgICB0aGlzLmRyYWdUYXJnZXRzID0gW11cbiAgICB0aGlzLmlzRmlsZURpYWxvZ0FjdGl2ZSA9IGZhbHNlXG5cbiAgICAvLyBDbGVhciBmaWxlcyB2YWx1ZVxuICAgIHRoaXMuZHJhZ2dlZEZpbGVzID0gbnVsbFxuXG4gICAgLy8gUmVzZXQgZHJhZyBzdGF0ZVxuICAgIHRoaXMuc2V0U3RhdGUoe1xuICAgICAgaXNEcmFnQWN0aXZlOiBmYWxzZSxcbiAgICAgIGRyYWdnZWRGaWxlczogW11cbiAgICB9KVxuXG4gICAgaWYgKGlzRHJhZ0RhdGFXaXRoRmlsZXMoZXZ0KSkge1xuICAgICAgUHJvbWlzZS5yZXNvbHZlKGdldERhdGFUcmFuc2Zlckl0ZW1zKGV2dCkpLnRoZW4oZmlsZUxpc3QgPT4ge1xuICAgICAgICBjb25zdCBhY2NlcHRlZEZpbGVzID0gW11cbiAgICAgICAgY29uc3QgcmVqZWN0ZWRGaWxlcyA9IFtdXG5cbiAgICAgICAgaWYgKGV2dC5pc1Byb3BhZ2F0aW9uU3RvcHBlZCgpKSB7XG4gICAgICAgICAgcmV0dXJuXG4gICAgICAgIH1cblxuICAgICAgICBmaWxlTGlzdC5mb3JFYWNoKGZpbGUgPT4ge1xuICAgICAgICAgIGlmICghZGlzYWJsZVByZXZpZXcpIHtcbiAgICAgICAgICAgIGZpbGUucHJldmlldyA9IHdpbmRvdy5VUkwuY3JlYXRlT2JqZWN0VVJMKGZpbGUpIC8vIGVzbGludC1kaXNhYmxlLWxpbmUgbm8tcGFyYW0tcmVhc3NpZ25cbiAgICAgICAgICB9XG5cbiAgICAgICAgICBpZiAoXG4gICAgICAgICAgICBmaWxlQWNjZXB0ZWQoZmlsZSwgYWNjZXB0KSAmJlxuICAgICAgICAgICAgZmlsZU1hdGNoU2l6ZShmaWxlLCB0aGlzLnByb3BzLm1heFNpemUsIHRoaXMucHJvcHMubWluU2l6ZSlcbiAgICAgICAgICApIHtcbiAgICAgICAgICAgIGFjY2VwdGVkRmlsZXMucHVzaChmaWxlKVxuICAgICAgICAgIH0gZWxzZSB7XG4gICAgICAgICAgICByZWplY3RlZEZpbGVzLnB1c2goZmlsZSlcbiAgICAgICAgICB9XG4gICAgICAgIH0pXG5cbiAgICAgICAgaWYgKCFtdWx0aXBsZSAmJiBhY2NlcHRlZEZpbGVzLmxlbmd0aCA+IDEpIHtcbiAgICAgICAgICAvLyBpZiBub3QgaW4gbXVsdGkgbW9kZSBhZGQgYW55IGV4dHJhIGFjY2VwdGVkIGZpbGVzIHRvIHJlamVjdGVkLlxuICAgICAgICAgIC8vIFRoaXMgd2lsbCBhbGxvdyBlbmQgdXNlcnMgdG8gZWFzaWx5IGlnbm9yZSBhIG11bHRpIGZpbGUgZHJvcCBpbiBcInNpbmdsZVwiIG1vZGUuXG4gICAgICAgICAgcmVqZWN0ZWRGaWxlcy5wdXNoKC4uLmFjY2VwdGVkRmlsZXMuc3BsaWNlKDApKVxuICAgICAgICB9XG5cbiAgICAgICAgLy8gVXBkYXRlIGBhY2NlcHRlZEZpbGVzYCBhbmQgYHJlamVjdGVkRmlsZXNgIHN0YXRlXG4gICAgICAgIC8vIFRoaXMgd2lsbCBtYWtlIGNoaWxkcmVuIHJlbmRlciBmdW5jdGlvbnMgcmVjZWl2ZSB0aGUgYXBwcm9wcmlhdGVcbiAgICAgICAgLy8gdmFsdWVzXG4gICAgICAgIHRoaXMuc2V0U3RhdGUoeyBhY2NlcHRlZEZpbGVzLCByZWplY3RlZEZpbGVzIH0sICgpID0+IHtcbiAgICAgICAgICBpZiAob25Ecm9wKSB7XG4gICAgICAgICAgICBvbkRyb3AuY2FsbCh0aGlzLCBhY2NlcHRlZEZpbGVzLCByZWplY3RlZEZpbGVzLCBldnQpXG4gICAgICAgICAgfVxuXG4gICAgICAgICAgaWYgKHJlamVjdGVkRmlsZXMubGVuZ3RoID4gMCAmJiBvbkRyb3BSZWplY3RlZCkge1xuICAgICAgICAgICAgb25Ecm9wUmVqZWN0ZWQuY2FsbCh0aGlzLCByZWplY3RlZEZpbGVzLCBldnQpXG4gICAgICAgICAgfVxuXG4gICAgICAgICAgaWYgKGFjY2VwdGVkRmlsZXMubGVuZ3RoID4gMCAmJiBvbkRyb3BBY2NlcHRlZCkge1xuICAgICAgICAgICAgb25Ecm9wQWNjZXB0ZWQuY2FsbCh0aGlzLCBhY2NlcHRlZEZpbGVzLCBldnQpXG4gICAgICAgICAgfVxuICAgICAgICB9KVxuICAgICAgfSlcbiAgICB9XG4gIH1cblxuICBvbkNsaWNrKGV2dCkge1xuICAgIGNvbnN0IHsgb25DbGljaywgZGlzYWJsZUNsaWNrIH0gPSB0aGlzLnByb3BzXG5cbiAgICAvLyBpZiBvbkNsaWNrIHByb3AgaXMgZ2l2ZW4sIHJ1biBpdCBmaXJzdFxuICAgIGlmIChvbkNsaWNrKSB7XG4gICAgICBvbkNsaWNrLmNhbGwodGhpcywgZXZ0KVxuICAgIH1cblxuICAgIC8vIGlmIGRpc2FibGVDbGljayBpcyBub3Qgc2V0IGFuZCB0aGUgZXZlbnQgaGFzbid0IGJlZW4gZGVmYXVsdCBwcmVmZW50ZWQgd2l0aGluXG4gICAgLy8gdGhlIG9uQ2xpY2sgbGlzdGVuZXIsIG9wZW4gdGhlIGZpbGUgZGlhbG9nXG4gICAgaWYgKCFkaXNhYmxlQ2xpY2sgJiYgIWV2dC5pc0RlZmF1bHRQcmV2ZW50ZWQoKSkge1xuICAgICAgZXZ0LnN0b3BQcm9wYWdhdGlvbigpXG5cbiAgICAgIC8vIGluIElFMTEvRWRnZSB0aGUgZmlsZS1icm93c2VyIGRpYWxvZyBpcyBibG9ja2luZywgZW5zdXJlIHRoaXMgaXMgYmVoaW5kIHNldFRpbWVvdXRcbiAgICAgIC8vIHRoaXMgaXMgc28gcmVhY3QgY2FuIGhhbmRsZSBzdGF0ZSBjaGFuZ2VzIGluIHRoZSBvbkNsaWNrIHByb3AgYWJvdmUgYWJvdmVcbiAgICAgIC8vIHNlZTogaHR0cHM6Ly9naXRodWIuY29tL3JlYWN0LWRyb3B6b25lL3JlYWN0LWRyb3B6b25lL2lzc3Vlcy80NTBcbiAgICAgIGlmIChpc0llT3JFZGdlKCkpIHtcbiAgICAgICAgc2V0VGltZW91dCh0aGlzLm9wZW4sIDApXG4gICAgICB9IGVsc2Uge1xuICAgICAgICB0aGlzLm9wZW4oKVxuICAgICAgfVxuICAgIH1cbiAgfVxuXG4gIG9uSW5wdXRFbGVtZW50Q2xpY2soZXZ0KSB7XG4gICAgZXZ0LnN0b3BQcm9wYWdhdGlvbigpXG4gICAgaWYgKHRoaXMucHJvcHMuaW5wdXRQcm9wcyAmJiB0aGlzLnByb3BzLmlucHV0UHJvcHMub25DbGljaykge1xuICAgICAgdGhpcy5wcm9wcy5pbnB1dFByb3BzLm9uQ2xpY2soZXZ0KVxuICAgIH1cbiAgfVxuXG4gIG9uRmlsZURpYWxvZ0NhbmNlbCgpIHtcbiAgICAvLyB0aW1lb3V0IHdpbGwgbm90IHJlY29nbml6ZSBjb250ZXh0IG9mIHRoaXMgbWV0aG9kXG4gICAgY29uc3QgeyBvbkZpbGVEaWFsb2dDYW5jZWwgfSA9IHRoaXMucHJvcHNcbiAgICAvLyBleGVjdXRlIHRoZSB0aW1lb3V0IG9ubHkgaWYgdGhlIEZpbGVEaWFsb2cgaXMgb3BlbmVkIGluIHRoZSBicm93c2VyXG4gICAgaWYgKHRoaXMuaXNGaWxlRGlhbG9nQWN0aXZlKSB7XG4gICAgICBzZXRUaW1lb3V0KCgpID0+IHtcbiAgICAgICAgaWYgKHRoaXMuZmlsZUlucHV0RWwgIT0gbnVsbCkge1xuICAgICAgICAgIC8vIFJldHVybnMgYW4gb2JqZWN0IGFzIEZpbGVMaXN0XG4gICAgICAgICAgY29uc3QgeyBmaWxlcyB9ID0gdGhpcy5maWxlSW5wdXRFbFxuXG4gICAgICAgICAgaWYgKCFmaWxlcy5sZW5ndGgpIHtcbiAgICAgICAgICAgIHRoaXMuaXNGaWxlRGlhbG9nQWN0aXZlID0gZmFsc2VcbiAgICAgICAgICB9XG4gICAgICAgIH1cblxuICAgICAgICBpZiAodHlwZW9mIG9uRmlsZURpYWxvZ0NhbmNlbCA9PT0gJ2Z1bmN0aW9uJykge1xuICAgICAgICAgIG9uRmlsZURpYWxvZ0NhbmNlbCgpXG4gICAgICAgIH1cbiAgICAgIH0sIDMwMClcbiAgICB9XG4gIH1cblxuICBzZXRSZWYocmVmKSB7XG4gICAgdGhpcy5ub2RlID0gcmVmXG4gIH1cblxuICBzZXRSZWZzKHJlZikge1xuICAgIHRoaXMuZmlsZUlucHV0RWwgPSByZWZcbiAgfVxuICAvKipcbiAgICogT3BlbiBzeXN0ZW0gZmlsZSB1cGxvYWQgZGlhbG9nLlxuICAgKlxuICAgKiBAcHVibGljXG4gICAqL1xuICBvcGVuKCkge1xuICAgIHRoaXMuaXNGaWxlRGlhbG9nQWN0aXZlID0gdHJ1ZVxuICAgIHRoaXMuZmlsZUlucHV0RWwudmFsdWUgPSBudWxsXG4gICAgdGhpcy5maWxlSW5wdXRFbC5jbGljaygpXG4gIH1cblxuICByZW5kZXJDaGlsZHJlbiA9IChjaGlsZHJlbiwgaXNEcmFnQWN0aXZlLCBpc0RyYWdBY2NlcHQsIGlzRHJhZ1JlamVjdCkgPT4ge1xuICAgIGlmICh0eXBlb2YgY2hpbGRyZW4gPT09ICdmdW5jdGlvbicpIHtcbiAgICAgIHJldHVybiBjaGlsZHJlbih7XG4gICAgICAgIC4uLnRoaXMuc3RhdGUsXG4gICAgICAgIGlzRHJhZ0FjdGl2ZSxcbiAgICAgICAgaXNEcmFnQWNjZXB0LFxuICAgICAgICBpc0RyYWdSZWplY3QsXG4gICAgICAgIG9wZW46IHRoaXMub3BlblxuICAgICAgfSlcbiAgICB9XG4gICAgcmV0dXJuIGNoaWxkcmVuXG4gIH1cblxuICByZW5kZXIoKSB7XG4gICAgY29uc3Qge1xuICAgICAgYWNjZXB0LFxuICAgICAgYWNjZXB0Q2xhc3NOYW1lLFxuICAgICAgYWN0aXZlQ2xhc3NOYW1lLFxuICAgICAgY2hpbGRyZW4sXG4gICAgICBkaXNhYmxlZCxcbiAgICAgIGRpc2FibGVkQ2xhc3NOYW1lLFxuICAgICAgaW5wdXRQcm9wcyxcbiAgICAgIG11bHRpcGxlLFxuICAgICAgbmFtZSxcbiAgICAgIHJlamVjdENsYXNzTmFtZSxcbiAgICAgIC4uLnJlc3RcbiAgICB9ID0gdGhpcy5wcm9wc1xuXG4gICAgbGV0IHtcbiAgICAgIGFjY2VwdFN0eWxlLFxuICAgICAgYWN0aXZlU3R5bGUsXG4gICAgICBjbGFzc05hbWUgPSAnJyxcbiAgICAgIGRpc2FibGVkU3R5bGUsXG4gICAgICByZWplY3RTdHlsZSxcbiAgICAgIHN0eWxlLFxuICAgICAgLi4ucHJvcHMgLy8gZXNsaW50LWRpc2FibGUtbGluZSBwcmVmZXItY29uc3RcbiAgICB9ID0gcmVzdFxuXG4gICAgY29uc3QgeyBpc0RyYWdBY3RpdmUsIGRyYWdnZWRGaWxlcyB9ID0gdGhpcy5zdGF0ZVxuICAgIGNvbnN0IGZpbGVzQ291bnQgPSBkcmFnZ2VkRmlsZXMubGVuZ3RoXG4gICAgY29uc3QgaXNNdWx0aXBsZUFsbG93ZWQgPSBtdWx0aXBsZSB8fCBmaWxlc0NvdW50IDw9IDFcbiAgICBjb25zdCBpc0RyYWdBY2NlcHQgPSBmaWxlc0NvdW50ID4gMCAmJiBhbGxGaWxlc0FjY2VwdGVkKGRyYWdnZWRGaWxlcywgdGhpcy5wcm9wcy5hY2NlcHQpXG4gICAgY29uc3QgaXNEcmFnUmVqZWN0ID0gZmlsZXNDb3VudCA+IDAgJiYgKCFpc0RyYWdBY2NlcHQgfHwgIWlzTXVsdGlwbGVBbGxvd2VkKVxuICAgIGNvbnN0IG5vU3R5bGVzID1cbiAgICAgICFjbGFzc05hbWUgJiYgIXN0eWxlICYmICFhY3RpdmVTdHlsZSAmJiAhYWNjZXB0U3R5bGUgJiYgIXJlamVjdFN0eWxlICYmICFkaXNhYmxlZFN0eWxlXG5cbiAgICBpZiAoaXNEcmFnQWN0aXZlICYmIGFjdGl2ZUNsYXNzTmFtZSkge1xuICAgICAgY2xhc3NOYW1lICs9ICcgJyArIGFjdGl2ZUNsYXNzTmFtZVxuICAgIH1cbiAgICBpZiAoaXNEcmFnQWNjZXB0ICYmIGFjY2VwdENsYXNzTmFtZSkge1xuICAgICAgY2xhc3NOYW1lICs9ICcgJyArIGFjY2VwdENsYXNzTmFtZVxuICAgIH1cbiAgICBpZiAoaXNEcmFnUmVqZWN0ICYmIHJlamVjdENsYXNzTmFtZSkge1xuICAgICAgY2xhc3NOYW1lICs9ICcgJyArIHJlamVjdENsYXNzTmFtZVxuICAgIH1cbiAgICBpZiAoZGlzYWJsZWQgJiYgZGlzYWJsZWRDbGFzc05hbWUpIHtcbiAgICAgIGNsYXNzTmFtZSArPSAnICcgKyBkaXNhYmxlZENsYXNzTmFtZVxuICAgIH1cblxuICAgIGlmIChub1N0eWxlcykge1xuICAgICAgc3R5bGUgPSBzdHlsZXMuZGVmYXVsdFxuICAgICAgYWN0aXZlU3R5bGUgPSBzdHlsZXMuYWN0aXZlXG4gICAgICBhY2NlcHRTdHlsZSA9IHN0eWxlcy5hY2NlcHRlZFxuICAgICAgcmVqZWN0U3R5bGUgPSBzdHlsZXMucmVqZWN0ZWRcbiAgICAgIGRpc2FibGVkU3R5bGUgPSBzdHlsZXMuZGlzYWJsZWRcbiAgICB9XG5cbiAgICBsZXQgYXBwbGllZFN0eWxlID0geyBwb3NpdGlvbjogJ3JlbGF0aXZlJywgLi4uc3R5bGUgfVxuICAgIGlmIChhY3RpdmVTdHlsZSAmJiBpc0RyYWdBY3RpdmUpIHtcbiAgICAgIGFwcGxpZWRTdHlsZSA9IHtcbiAgICAgICAgLi4uYXBwbGllZFN0eWxlLFxuICAgICAgICAuLi5hY3RpdmVTdHlsZVxuICAgICAgfVxuICAgIH1cbiAgICBpZiAoYWNjZXB0U3R5bGUgJiYgaXNEcmFnQWNjZXB0KSB7XG4gICAgICBhcHBsaWVkU3R5bGUgPSB7XG4gICAgICAgIC4uLmFwcGxpZWRTdHlsZSxcbiAgICAgICAgLi4uYWNjZXB0U3R5bGVcbiAgICAgIH1cbiAgICB9XG4gICAgaWYgKHJlamVjdFN0eWxlICYmIGlzRHJhZ1JlamVjdCkge1xuICAgICAgYXBwbGllZFN0eWxlID0ge1xuICAgICAgICAuLi5hcHBsaWVkU3R5bGUsXG4gICAgICAgIC4uLnJlamVjdFN0eWxlXG4gICAgICB9XG4gICAgfVxuICAgIGlmIChkaXNhYmxlZFN0eWxlICYmIGRpc2FibGVkKSB7XG4gICAgICBhcHBsaWVkU3R5bGUgPSB7XG4gICAgICAgIC4uLmFwcGxpZWRTdHlsZSxcbiAgICAgICAgLi4uZGlzYWJsZWRTdHlsZVxuICAgICAgfVxuICAgIH1cblxuICAgIGNvbnN0IGlucHV0QXR0cmlidXRlcyA9IHtcbiAgICAgIGFjY2VwdCxcbiAgICAgIGRpc2FibGVkLFxuICAgICAgdHlwZTogJ2ZpbGUnLFxuICAgICAgc3R5bGU6IHtcbiAgICAgICAgcG9zaXRpb246ICdhYnNvbHV0ZScsXG4gICAgICAgIHRvcDogMCxcbiAgICAgICAgcmlnaHQ6IDAsXG4gICAgICAgIGJvdHRvbTogMCxcbiAgICAgICAgbGVmdDogMCxcbiAgICAgICAgb3BhY2l0eTogMC4wMDAwMSxcbiAgICAgICAgcG9pbnRlckV2ZW50czogJ25vbmUnLFxuICAgICAgICAuLi5pbnB1dFByb3BzLnN0eWxlXG4gICAgICB9LFxuICAgICAgbXVsdGlwbGU6IHN1cHBvcnRNdWx0aXBsZSAmJiBtdWx0aXBsZSxcbiAgICAgIHJlZjogdGhpcy5zZXRSZWZzLFxuICAgICAgb25DaGFuZ2U6IHRoaXMub25Ecm9wLFxuICAgICAgYXV0b0NvbXBsZXRlOiAnb2ZmJ1xuICAgIH1cblxuICAgIGlmIChuYW1lICYmIG5hbWUubGVuZ3RoKSB7XG4gICAgICBpbnB1dEF0dHJpYnV0ZXMubmFtZSA9IG5hbWVcbiAgICB9XG5cbiAgICAvLyBEZXN0cnVjdHVyZSBjdXN0b20gcHJvcHMgYXdheSBmcm9tIHByb3BzIHVzZWQgZm9yIHRoZSBkaXYgZWxlbWVudFxuICAgIC8qIGVzbGludC1kaXNhYmxlIG5vLXVudXNlZC12YXJzICovXG4gICAgY29uc3Qge1xuICAgICAgYWNjZXB0ZWRGaWxlcyxcbiAgICAgIHByZXZlbnREcm9wT25Eb2N1bWVudCxcbiAgICAgIGRpc2FibGVQcmV2aWV3LFxuICAgICAgZGlzYWJsZUNsaWNrLFxuICAgICAgb25Ecm9wQWNjZXB0ZWQsXG4gICAgICBvbkRyb3BSZWplY3RlZCxcbiAgICAgIG9uRmlsZURpYWxvZ0NhbmNlbCxcbiAgICAgIG1heFNpemUsXG4gICAgICBtaW5TaXplLFxuICAgICAgZ2V0RGF0YVRyYW5zZmVySXRlbXMsXG4gICAgICAuLi5kaXZQcm9wc1xuICAgIH0gPSBwcm9wc1xuICAgIC8qIGVzbGludC1lbmFibGUgbm8tdW51c2VkLXZhcnMgKi9cblxuICAgIC8qIGVzbGludC1kaXNhYmxlIGpzeC1hMTF5L25vLXN0YXRpYy1lbGVtZW50LWludGVyYWN0aW9ucyAqL1xuICAgIC8qIGVzbGludC1kaXNhYmxlIGpzeC1hMTF5L2NsaWNrLWV2ZW50cy1oYXZlLWtleS1ldmVudHMgKi9cbiAgICByZXR1cm4gKFxuICAgICAgPGRpdlxuICAgICAgICBjbGFzc05hbWU9e2NsYXNzTmFtZX1cbiAgICAgICAgc3R5bGU9e2FwcGxpZWRTdHlsZX1cbiAgICAgICAge1xuICAgICAgICAgIC4uLmRpdlByb3BzIC8qIGV4cGFuZCB1c2VyIHByb3ZpZGVkIHByb3BzIGZpcnN0IHNvIGV2ZW50IGhhbmRsZXJzIGFyZSBuZXZlciBvdmVycmlkZGVuICovXG4gICAgICAgIH1cbiAgICAgICAgb25DbGljaz17dGhpcy5jb21wb3NlSGFuZGxlcnModGhpcy5vbkNsaWNrKX1cbiAgICAgICAgb25EcmFnU3RhcnQ9e3RoaXMuY29tcG9zZUhhbmRsZXJzKHRoaXMub25EcmFnU3RhcnQpfVxuICAgICAgICBvbkRyYWdFbnRlcj17dGhpcy5jb21wb3NlSGFuZGxlcnModGhpcy5vbkRyYWdFbnRlcil9XG4gICAgICAgIG9uRHJhZ092ZXI9e3RoaXMuY29tcG9zZUhhbmRsZXJzKHRoaXMub25EcmFnT3Zlcil9XG4gICAgICAgIG9uRHJhZ0xlYXZlPXt0aGlzLmNvbXBvc2VIYW5kbGVycyh0aGlzLm9uRHJhZ0xlYXZlKX1cbiAgICAgICAgb25Ecm9wPXt0aGlzLmNvbXBvc2VIYW5kbGVycyh0aGlzLm9uRHJvcCl9XG4gICAgICAgIHJlZj17dGhpcy5zZXRSZWZ9XG4gICAgICAgIGFyaWEtZGlzYWJsZWQ9e2Rpc2FibGVkfVxuICAgICAgPlxuICAgICAgICB7dGhpcy5yZW5kZXJDaGlsZHJlbihjaGlsZHJlbiwgaXNEcmFnQWN0aXZlLCBpc0RyYWdBY2NlcHQsIGlzRHJhZ1JlamVjdCl9XG4gICAgICAgIDxpbnB1dFxuICAgICAgICAgIHtcbiAgICAgICAgICAgIC4uLmlucHV0UHJvcHMgLyogZXhwYW5kIHVzZXIgcHJvdmlkZWQgaW5wdXRQcm9wcyBmaXJzdCBzbyBpbnB1dEF0dHJpYnV0ZXMgb3ZlcnJpZGUgdGhlbSAqL1xuICAgICAgICAgIH1cbiAgICAgICAgICB7Li4uaW5wdXRBdHRyaWJ1dGVzfVxuICAgICAgICAvPlxuICAgICAgPC9kaXY+XG4gICAgKVxuICB9XG59XG5cbmV4cG9ydCBkZWZhdWx0IERyb3B6b25lXG5cbkRyb3B6b25lLnByb3BUeXBlcyA9IHtcbiAgLyoqXG4gICAqIEFsbG93IHNwZWNpZmljIHR5cGVzIG9mIGZpbGVzLiBTZWUgaHR0cHM6Ly9naXRodWIuY29tL29rb25ldC9hdHRyLWFjY2VwdCBmb3IgbW9yZSBpbmZvcm1hdGlvbi5cbiAgICogS2VlcCBpbiBtaW5kIHRoYXQgbWltZSB0eXBlIGRldGVybWluYXRpb24gaXMgbm90IHJlbGlhYmxlIGFjcm9zcyBwbGF0Zm9ybXMuIENTViBmaWxlcyxcbiAgICogZm9yIGV4YW1wbGUsIGFyZSByZXBvcnRlZCBhcyB0ZXh0L3BsYWluIHVuZGVyIG1hY09TIGJ1dCBhcyBhcHBsaWNhdGlvbi92bmQubXMtZXhjZWwgdW5kZXJcbiAgICogV2luZG93cy4gSW4gc29tZSBjYXNlcyB0aGVyZSBtaWdodCBub3QgYmUgYSBtaW1lIHR5cGUgc2V0IGF0IGFsbC5cbiAgICogU2VlOiBodHRwczovL2dpdGh1Yi5jb20vcmVhY3QtZHJvcHpvbmUvcmVhY3QtZHJvcHpvbmUvaXNzdWVzLzI3NlxuICAgKi9cbiAgYWNjZXB0OiBQcm9wVHlwZXMub25lT2ZUeXBlKFtQcm9wVHlwZXMuc3RyaW5nLCBQcm9wVHlwZXMuYXJyYXlPZihQcm9wVHlwZXMuc3RyaW5nKV0pLFxuXG4gIC8qKlxuICAgKiBDb250ZW50cyBvZiB0aGUgZHJvcHpvbmVcbiAgICovXG4gIGNoaWxkcmVuOiBQcm9wVHlwZXMub25lT2ZUeXBlKFtQcm9wVHlwZXMubm9kZSwgUHJvcFR5cGVzLmZ1bmNdKSxcblxuICAvKipcbiAgICogRGlzYWxsb3cgY2xpY2tpbmcgb24gdGhlIGRyb3B6b25lIGNvbnRhaW5lciB0byBvcGVuIGZpbGUgZGlhbG9nXG4gICAqL1xuICBkaXNhYmxlQ2xpY2s6IFByb3BUeXBlcy5ib29sLFxuXG4gIC8qKlxuICAgKiBFbmFibGUvZGlzYWJsZSB0aGUgZHJvcHpvbmUgZW50aXJlbHlcbiAgICovXG4gIGRpc2FibGVkOiBQcm9wVHlwZXMuYm9vbCxcblxuICAvKipcbiAgICogRW5hYmxlL2Rpc2FibGUgcHJldmlldyBnZW5lcmF0aW9uXG4gICAqL1xuICBkaXNhYmxlUHJldmlldzogUHJvcFR5cGVzLmJvb2wsXG5cbiAgLyoqXG4gICAqIElmIGZhbHNlLCBhbGxvdyBkcm9wcGVkIGl0ZW1zIHRvIHRha2Ugb3ZlciB0aGUgY3VycmVudCBicm93c2VyIHdpbmRvd1xuICAgKi9cbiAgcHJldmVudERyb3BPbkRvY3VtZW50OiBQcm9wVHlwZXMuYm9vbCxcblxuICAvKipcbiAgICogUGFzcyBhZGRpdGlvbmFsIGF0dHJpYnV0ZXMgdG8gdGhlIGA8aW5wdXQgdHlwZT1cImZpbGVcIi8+YCB0YWdcbiAgICovXG4gIGlucHV0UHJvcHM6IFByb3BUeXBlcy5vYmplY3QsXG5cbiAgLyoqXG4gICAqIEFsbG93IGRyb3BwaW5nIG11bHRpcGxlIGZpbGVzXG4gICAqL1xuICBtdWx0aXBsZTogUHJvcFR5cGVzLmJvb2wsXG5cbiAgLyoqXG4gICAqIGBuYW1lYCBhdHRyaWJ1dGUgZm9yIHRoZSBpbnB1dCB0YWdcbiAgICovXG4gIG5hbWU6IFByb3BUeXBlcy5zdHJpbmcsXG5cbiAgLyoqXG4gICAqIE1heGltdW0gZmlsZSBzaXplIChpbiBieXRlcylcbiAgICovXG4gIG1heFNpemU6IFByb3BUeXBlcy5udW1iZXIsXG5cbiAgLyoqXG4gICAqIE1pbmltdW0gZmlsZSBzaXplIChpbiBieXRlcylcbiAgICovXG4gIG1pblNpemU6IFByb3BUeXBlcy5udW1iZXIsXG5cbiAgLyoqXG4gICAqIGNsYXNzTmFtZVxuICAgKi9cbiAgY2xhc3NOYW1lOiBQcm9wVHlwZXMuc3RyaW5nLFxuXG4gIC8qKlxuICAgKiBjbGFzc05hbWUgdG8gYXBwbHkgd2hlbiBkcmFnIGlzIGFjdGl2ZVxuICAgKi9cbiAgYWN0aXZlQ2xhc3NOYW1lOiBQcm9wVHlwZXMuc3RyaW5nLFxuXG4gIC8qKlxuICAgKiBjbGFzc05hbWUgdG8gYXBwbHkgd2hlbiBkcm9wIHdpbGwgYmUgYWNjZXB0ZWRcbiAgICovXG4gIGFjY2VwdENsYXNzTmFtZTogUHJvcFR5cGVzLnN0cmluZyxcblxuICAvKipcbiAgICogY2xhc3NOYW1lIHRvIGFwcGx5IHdoZW4gZHJvcCB3aWxsIGJlIHJlamVjdGVkXG4gICAqL1xuICByZWplY3RDbGFzc05hbWU6IFByb3BUeXBlcy5zdHJpbmcsXG5cbiAgLyoqXG4gICAqIGNsYXNzTmFtZSB0byBhcHBseSB3aGVuIGRyb3B6b25lIGlzIGRpc2FibGVkXG4gICAqL1xuICBkaXNhYmxlZENsYXNzTmFtZTogUHJvcFR5cGVzLnN0cmluZyxcblxuICAvKipcbiAgICogQ1NTIHN0eWxlcyB0byBhcHBseVxuICAgKi9cbiAgc3R5bGU6IFByb3BUeXBlcy5vYmplY3QsXG5cbiAgLyoqXG4gICAqIENTUyBzdHlsZXMgdG8gYXBwbHkgd2hlbiBkcmFnIGlzIGFjdGl2ZVxuICAgKi9cbiAgYWN0aXZlU3R5bGU6IFByb3BUeXBlcy5vYmplY3QsXG5cbiAgLyoqXG4gICAqIENTUyBzdHlsZXMgdG8gYXBwbHkgd2hlbiBkcm9wIHdpbGwgYmUgYWNjZXB0ZWRcbiAgICovXG4gIGFjY2VwdFN0eWxlOiBQcm9wVHlwZXMub2JqZWN0LFxuXG4gIC8qKlxuICAgKiBDU1Mgc3R5bGVzIHRvIGFwcGx5IHdoZW4gZHJvcCB3aWxsIGJlIHJlamVjdGVkXG4gICAqL1xuICByZWplY3RTdHlsZTogUHJvcFR5cGVzLm9iamVjdCxcblxuICAvKipcbiAgICogQ1NTIHN0eWxlcyB0byBhcHBseSB3aGVuIGRyb3B6b25lIGlzIGRpc2FibGVkXG4gICAqL1xuICBkaXNhYmxlZFN0eWxlOiBQcm9wVHlwZXMub2JqZWN0LFxuXG4gIC8qKlxuICAgKiBnZXREYXRhVHJhbnNmZXJJdGVtcyBoYW5kbGVyXG4gICAqIEBwYXJhbSB7RXZlbnR9IGV2ZW50XG4gICAqIEByZXR1cm5zIHtBcnJheX0gYXJyYXkgb2YgRmlsZSBvYmplY3RzXG4gICAqL1xuICBnZXREYXRhVHJhbnNmZXJJdGVtczogUHJvcFR5cGVzLmZ1bmMsXG5cbiAgLyoqXG4gICAqIG9uQ2xpY2sgY2FsbGJhY2tcbiAgICogQHBhcmFtIHtFdmVudH0gZXZlbnRcbiAgICovXG4gIG9uQ2xpY2s6IFByb3BUeXBlcy5mdW5jLFxuXG4gIC8qKlxuICAgKiBvbkRyb3AgY2FsbGJhY2tcbiAgICovXG4gIG9uRHJvcDogUHJvcFR5cGVzLmZ1bmMsXG5cbiAgLyoqXG4gICAqIG9uRHJvcEFjY2VwdGVkIGNhbGxiYWNrXG4gICAqL1xuICBvbkRyb3BBY2NlcHRlZDogUHJvcFR5cGVzLmZ1bmMsXG5cbiAgLyoqXG4gICAqIG9uRHJvcFJlamVjdGVkIGNhbGxiYWNrXG4gICAqL1xuICBvbkRyb3BSZWplY3RlZDogUHJvcFR5cGVzLmZ1bmMsXG5cbiAgLyoqXG4gICAqIG9uRHJhZ1N0YXJ0IGNhbGxiYWNrXG4gICAqL1xuICBvbkRyYWdTdGFydDogUHJvcFR5cGVzLmZ1bmMsXG5cbiAgLyoqXG4gICAqIG9uRHJhZ0VudGVyIGNhbGxiYWNrXG4gICAqL1xuICBvbkRyYWdFbnRlcjogUHJvcFR5cGVzLmZ1bmMsXG5cbiAgLyoqXG4gICAqIG9uRHJhZ092ZXIgY2FsbGJhY2tcbiAgICovXG4gIG9uRHJhZ092ZXI6IFByb3BUeXBlcy5mdW5jLFxuXG4gIC8qKlxuICAgKiBvbkRyYWdMZWF2ZSBjYWxsYmFja1xuICAgKi9cbiAgb25EcmFnTGVhdmU6IFByb3BUeXBlcy5mdW5jLFxuXG4gIC8qKlxuICAgKiBQcm92aWRlIGEgY2FsbGJhY2sgb24gY2xpY2tpbmcgdGhlIGNhbmNlbCBidXR0b24gb2YgdGhlIGZpbGUgZGlhbG9nXG4gICAqL1xuICBvbkZpbGVEaWFsb2dDYW5jZWw6IFByb3BUeXBlcy5mdW5jXG59XG5cbkRyb3B6b25lLmRlZmF1bHRQcm9wcyA9IHtcbiAgcHJldmVudERyb3BPbkRvY3VtZW50OiB0cnVlLFxuICBkaXNhYmxlZDogZmFsc2UsXG4gIGRpc2FibGVQcmV2aWV3OiBmYWxzZSxcbiAgZGlzYWJsZUNsaWNrOiBmYWxzZSxcbiAgaW5wdXRQcm9wczoge30sXG4gIG11bHRpcGxlOiB0cnVlLFxuICBtYXhTaXplOiBJbmZpbml0eSxcbiAgbWluU2l6ZTogMCxcbiAgZ2V0RGF0YVRyYW5zZmVySXRlbXM6IGRlZmF1bHRHZXREYXRhVHJhbnNmZXJJdGVtXG59XG4iXSwibmFtZXMiOlsibW9kdWxlIiwidCIsIm4iLCJlIiwiciIsImV4cG9ydHMiLCJvIiwiaSIsImwiLCJjYWxsIiwibSIsImMiLCJkIiwiT2JqZWN0IiwiZGVmaW5lUHJvcGVydHkiLCJjb25maWd1cmFibGUiLCJlbnVtZXJhYmxlIiwiZ2V0IiwiX19lc01vZHVsZSIsImRlZmF1bHQiLCJwcm90b3R5cGUiLCJoYXNPd25Qcm9wZXJ0eSIsInAiLCJzIiwid2luZG93IiwiTWF0aCIsInNlbGYiLCJGdW5jdGlvbiIsIl9fZyIsInZlcnNpb24iLCJfX2UiLCJhIiwidG9TdHJpbmciLCJzbGljZSIsIlN5bWJvbCIsInUiLCJzdG9yZSIsImYiLCJ2IiwiRiIsInkiLCJHIiwiaCIsIlMiLCJQIiwieCIsIkIiLCJnIiwiYiIsIlUiLCJjb3JlIiwiVyIsIlIiLCJyYW5kb20iLCJjb25jYXQiLCJhcHBseSIsImFyZ3VtZW50cyIsIlR5cGVFcnJvciIsIm1pbiIsIkFycmF5IiwiaXNBcnJheSIsInNwbGl0IiwibmFtZSIsInR5cGUiLCJyZXBsYWNlIiwic29tZSIsInRyaW0iLCJjaGFyQXQiLCJ0b0xvd2VyQ2FzZSIsImVuZHNXaXRoIiwidGhpcyIsInZhbHVlIiwiZG9jdW1lbnQiLCJjcmVhdGVFbGVtZW50IiwidmFsdWVPZiIsIndyaXRhYmxlIiwiaW5zcGVjdFNvdXJjZSIsImpvaW4iLCJTdHJpbmciLCJsZW5ndGgiLCJfIiwidyIsInB1c2giLCJwcm9wZXJ0eUlzRW51bWVyYWJsZSIsImNlaWwiLCJmbG9vciIsImlzTmFOIiwiY29uc3RydWN0b3IiLCJzdXBwb3J0TXVsdGlwbGUiLCJmaWxlQWNjZXB0ZWQiLCJmaWxlIiwiYWNjZXB0IiwiYWNjZXB0cyIsImlzRHJhZ0RhdGFXaXRoRmlsZXMiLCJldnQiLCJkYXRhVHJhbnNmZXIiLCJldmVyeSIsInR5cGVzIiwib25Eb2N1bWVudERyYWdPdmVyIiwicHJldmVudERlZmF1bHQiLCJEcm9wem9uZSIsInByb3BzIiwiY29udGV4dCIsInJlbmRlckNoaWxkcmVuIiwiY2hpbGRyZW4iLCJpc0RyYWdBY3RpdmUiLCJpc0RyYWdBY2NlcHQiLCJpc0RyYWdSZWplY3QiLCJfdGhpcyIsInN0YXRlIiwib3BlbiIsImNvbXBvc2VIYW5kbGVycyIsImJpbmQiLCJvbkNsaWNrIiwib25Eb2N1bWVudERyb3AiLCJvbkRyYWdFbnRlciIsIm9uRHJhZ0xlYXZlIiwib25EcmFnT3ZlciIsIm9uRHJhZ1N0YXJ0Iiwib25Ecm9wIiwib25GaWxlRGlhbG9nQ2FuY2VsIiwib25JbnB1dEVsZW1lbnRDbGljayIsInNldFJlZiIsInNldFJlZnMiLCJpc0ZpbGVEaWFsb2dBY3RpdmUiLCJSZWFjdCIsIkNvbXBvbmVudCIsInByZXZlbnREcm9wT25Eb2N1bWVudCIsImRyYWdUYXJnZXRzIiwiYWRkRXZlbnRMaXN0ZW5lciIsImZpbGVJbnB1dEVsIiwicmVtb3ZlRXZlbnRMaXN0ZW5lciIsImhhbmRsZXIiLCJkaXNhYmxlZCIsIm5vZGUiLCJjb250YWlucyIsInRhcmdldCIsInBlcnNpc3QiLCJpbmRleE9mIiwicmVzb2x2ZSIsImdldERhdGFUcmFuc2Zlckl0ZW1zIiwidGhlbiIsImlzUHJvcGFnYXRpb25TdG9wcGVkIiwic2V0U3RhdGUiLCJkcm9wRWZmZWN0IiwiZXJyIiwiZmlsdGVyIiwiZWwiLCJfdGhpczMiLCJvbkRyb3BBY2NlcHRlZCIsIm9uRHJvcFJlamVjdGVkIiwibXVsdGlwbGUiLCJkaXNhYmxlUHJldmlldyIsImRyYWdnZWRGaWxlcyIsImFjY2VwdGVkRmlsZXMiLCJyZWplY3RlZEZpbGVzIiwiZm9yRWFjaCIsInByZXZpZXciLCJVUkwiLCJjcmVhdGVPYmplY3RVUkwiLCJtYXhTaXplIiwibWluU2l6ZSIsInNpemUiLCJmaWxlTWF0Y2hTaXplIiwiX3RoaXM0Iiwic3BsaWNlIiwiZGlzYWJsZUNsaWNrIiwiaXNEZWZhdWx0UHJldmVudGVkIiwic3RvcFByb3BhZ2F0aW9uIiwidXNlckFnZW50IiwibmF2aWdhdG9yIiwiaXNJZSIsImlzRWRnZSIsImlzSWVPckVkZ2UiLCJpbnB1dFByb3BzIiwiX3RoaXM1IiwiZmlsZXMiLCJyZWYiLCJjbGljayIsImFjY2VwdENsYXNzTmFtZSIsImFjdGl2ZUNsYXNzTmFtZSIsImRpc2FibGVkQ2xhc3NOYW1lIiwicmVqZWN0Q2xhc3NOYW1lIiwicmVzdCIsImFjY2VwdFN0eWxlIiwiYWN0aXZlU3R5bGUiLCJjbGFzc05hbWUiLCJkaXNhYmxlZFN0eWxlIiwicmVqZWN0U3R5bGUiLCJzdHlsZSIsImZpbGVzQ291bnQiLCJpc011bHRpcGxlQWxsb3dlZCIsImFsbEZpbGVzQWNjZXB0ZWQiLCJub1N0eWxlcyIsInN0eWxlcyIsImFwcGxpZWRTdHlsZSIsInBvc2l0aW9uIiwiaW5wdXRBdHRyaWJ1dGVzIiwiZGl2UHJvcHMiLCJwcm9wVHlwZXMiLCJQcm9wVHlwZXMiLCJvbmVPZlR5cGUiLCJzdHJpbmciLCJhcnJheU9mIiwiZnVuYyIsImJvb2wiLCJvYmplY3QiLCJudW1iZXIiLCJkZWZhdWx0UHJvcHMiLCJJbmZpbml0eSIsImV2ZW50IiwiZGF0YVRyYW5zZmVySXRlbXNMaXN0IiwiZHQiLCJpdGVtcyJdLCJtYXBwaW5ncyI6IndYQUFBQSxVQUFlLFNBQVNDLEdBQUcsU0FBU0MsRUFBRUMsR0FBRyxHQUFHQyxFQUFFRCxHQUFHLE9BQU9DLEVBQUVELEdBQUdFLFFBQVEsSUFBSUMsRUFBRUYsRUFBRUQsSUFBSUksRUFBRUosRUFBRUssR0FBRSxFQUFHSCxZQUFZLE9BQU9K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
+
+(function webpackUniversalModuleDefinition(root, factory) {
+	if(typeof exports === 'object' && typeof module === 'object')
+		module.exports = factory(require("react"));
+	else if(typeof define === 'function' && define.amd)
+		define(["react"], factory);
+	else if(typeof exports === 'object')
+		exports["ReactCrop"] = factory(require("react"));
+	else
+		root["ReactCrop"] = factory(root["React"]);
+})(typeof self !== 'undefined' ? self : this, function(__WEBPACK_EXTERNAL_MODULE_3__) {
+return /******/ (function(modules) { // webpackBootstrap
+/******/ 	// The module cache
+/******/ 	var installedModules = {};
+/******/
+/******/ 	// The require function
+/******/ 	function __webpack_require__(moduleId) {
+/******/
+/******/ 		// Check if module is in cache
+/******/ 		if(installedModules[moduleId]) {
+/******/ 			return installedModules[moduleId].exports;
+/******/ 		}
+/******/ 		// Create a new module (and put it into the cache)
+/******/ 		var module = installedModules[moduleId] = {
+/******/ 			i: moduleId,
+/******/ 			l: false,
+/******/ 			exports: {}
+/******/ 		};
+/******/
+/******/ 		// Execute the module function
+/******/ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
+/******/
+/******/ 		// Flag the module as loaded
+/******/ 		module.l = true;
+/******/
+/******/ 		// Return the exports of the module
+/******/ 		return module.exports;
+/******/ 	}
+/******/
+/******/
+/******/ 	// expose the modules object (__webpack_modules__)
+/******/ 	__webpack_require__.m = modules;
+/******/
+/******/ 	// expose the module cache
+/******/ 	__webpack_require__.c = installedModules;
+/******/
+/******/ 	// define getter function for harmony exports
+/******/ 	__webpack_require__.d = function(exports, name, getter) {
+/******/ 		if(!__webpack_require__.o(exports, name)) {
+/******/ 			Object.defineProperty(exports, name, {
+/******/ 				configurable: false,
+/******/ 				enumerable: true,
+/******/ 				get: getter
+/******/ 			});
+/******/ 		}
+/******/ 	};
+/******/
+/******/ 	// getDefaultExport function for compatibility with non-harmony modules
+/******/ 	__webpack_require__.n = function(module) {
+/******/ 		var getter = module && module.__esModule ?
+/******/ 			function getDefault() { return module['default']; } :
+/******/ 			function getModuleExports() { return module; };
+/******/ 		__webpack_require__.d(getter, 'a', getter);
+/******/ 		return getter;
+/******/ 	};
+/******/
+/******/ 	// Object.prototype.hasOwnProperty.call
+/******/ 	__webpack_require__.o = function(object, property) { return Object.prototype.hasOwnProperty.call(object, property); };
+/******/
+/******/ 	// __webpack_public_path__
+/******/ 	__webpack_require__.p = "";
+/******/
+/******/ 	// Load entry module and return exports
+/******/ 	return __webpack_require__(__webpack_require__.s = 2);
+/******/ })
+/************************************************************************/
+/******/ ([
+/* 0 */
+/***/ (function(module, exports) {
+
+// shim for using process in browser
+var process = module.exports = {};
+
+// cached from whatever global is present so that test runners that stub it
+// don't break things.  But we need to wrap it in a try catch in case it is
+// wrapped in strict mode code which doesn't define any globals.  It's inside a
+// function because try/catches deoptimize in certain engines.
+
+var cachedSetTimeout;
+var cachedClearTimeout;
+
+function defaultSetTimout() {
+    throw new Error('setTimeout has not been defined');
+}
+function defaultClearTimeout () {
+    throw new Error('clearTimeout has not been defined');
+}
+(function () {
+    try {
+        if (typeof setTimeout === 'function') {
+            cachedSetTimeout = setTimeout;
+        } else {
+            cachedSetTimeout = defaultSetTimout;
+        }
+    } catch (e) {
+        cachedSetTimeout = defaultSetTimout;
+    }
+    try {
+        if (typeof clearTimeout === 'function') {
+            cachedClearTimeout = clearTimeout;
+        } else {
+            cachedClearTimeout = defaultClearTimeout;
+        }
+    } catch (e) {
+        cachedClearTimeout = defaultClearTimeout;
+    }
+} ())
+function runTimeout(fun) {
+    if (cachedSetTimeout === setTimeout) {
+        //normal enviroments in sane situations
+        return setTimeout(fun, 0);
+    }
+    // if setTimeout wasn't available but was latter defined
+    if ((cachedSetTimeout === defaultSetTimout || !cachedSetTimeout) && setTimeout) {
+        cachedSetTimeout = setTimeout;
+        return setTimeout(fun, 0);
+    }
+    try {
+        // when when somebody has screwed with setTimeout but no I.E. maddness
+        return cachedSetTimeout(fun, 0);
+    } catch(e){
+        try {
+            // When we are in I.E. but the script has been evaled so I.E. doesn't trust the global object when called normally
+            return cachedSetTimeout.call(null, fun, 0);
+        } catch(e){
+            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error
+            return cachedSetTimeout.call(this, fun, 0);
+        }
+    }
+
+
+}
+function runClearTimeout(marker) {
+    if (cachedClearTimeout === clearTimeout) {
+        //normal enviroments in sane situations
+        return clearTimeout(marker);
+    }
+    // if clearTimeout wasn't available but was latter defined
+    if ((cachedClearTimeout === defaultClearTimeout || !cachedClearTimeout) && clearTimeout) {
+        cachedClearTimeout = clearTimeout;
+        return clearTimeout(marker);
+    }
+    try {
+        // when when somebody has screwed with setTimeout but no I.E. maddness
+        return cachedClearTimeout(marker);
+    } catch (e){
+        try {
+            // When we are in I.E. but the script has been evaled so I.E. doesn't  trust the global object when called normally
+            return cachedClearTimeout.call(null, marker);
+        } catch (e){
+            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error.
+            // Some versions of I.E. have different rules for clearTimeout vs setTimeout
+            return cachedClearTimeout.call(this, marker);
+        }
+    }
+
+
+
+}
+var queue = [];
+var draining = false;
+var currentQueue;
+var queueIndex = -1;
+
+function cleanUpNextTick() {
+    if (!draining || !currentQueue) {
+        return;
+    }
+    draining = false;
+    if (currentQueue.length) {
+        queue = currentQueue.concat(queue);
+    } else {
+        queueIndex = -1;
+    }
+    if (queue.length) {
+        drainQueue();
+    }
+}
+
+function drainQueue() {
+    if (draining) {
+        return;
+    }
+    var timeout = runTimeout(cleanUpNextTick);
+    draining = true;
+
+    var len = queue.length;
+    while(len) {
+        currentQueue = queue;
+        queue = [];
+        while (++queueIndex < len) {
+            if (currentQueue) {
+                currentQueue[queueIndex].run();
+            }
+        }
+        queueIndex = -1;
+        len = queue.length;
+    }
+    currentQueue = null;
+    draining = false;
+    runClearTimeout(timeout);
+}
+
+process.nextTick = function (fun) {
+    var args = new Array(arguments.length - 1);
+    if (arguments.length > 1) {
+        for (var i = 1; i < arguments.length; i++) {
+            args[i - 1] = arguments[i];
+        }
+    }
+    queue.push(new Item(fun, args));
+    if (queue.length === 1 && !draining) {
+        runTimeout(drainQueue);
+    }
+};
+
+// v8 likes predictible objects
+function Item(fun, array) {
+    this.fun = fun;
+    this.array = array;
+}
+Item.prototype.run = function () {
+    this.fun.apply(null, this.array);
+};
+process.title = 'browser';
+process.browser = true;
+process.env = {};
+process.argv = [];
+process.version = ''; // empty string to avoid regexp issues
+process.versions = {};
+
+function noop() {}
+
+process.on = noop;
+process.addListener = noop;
+process.once = noop;
+process.off = noop;
+process.removeListener = noop;
+process.removeAllListeners = noop;
+process.emit = noop;
+process.prependListener = noop;
+process.prependOnceListener = noop;
+
+process.listeners = function (name) { return [] }
+
+process.binding = function (name) {
+    throw new Error('process.binding is not supported');
+};
+
+process.cwd = function () { return '/' };
+process.chdir = function (dir) {
+    throw new Error('process.chdir is not supported');
+};
+process.umask = function() { return 0; };
+
+
+/***/ }),
+/* 1 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/**
+ * Copyright (c) 2013-present, Facebook, Inc.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+
+
+var ReactPropTypesSecret = 'SECRET_DO_NOT_PASS_THIS_OR_YOU_WILL_BE_FIRED';
+
+module.exports = ReactPropTypesSecret;
+
+
+/***/ }),
+/* 2 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.containCrop = exports.makeAspectCrop = exports.getPixelCrop = exports.Component = exports.default = undefined;
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; /* globals document, window */
+
+
+var _react = __webpack_require__(3);
+
+var _react2 = _interopRequireDefault(_react);
+
+var _propTypes = __webpack_require__(4);
+
+var _propTypes2 = _interopRequireDefault(_propTypes);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+// Feature detection
+// https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener#Improving_scrolling_performance_with_passive_listeners
+var passiveSupported = false;
+
+try {
+  window.addEventListener('test', null, Object.defineProperty({}, 'passive', {
+    get: function get() {
+      passiveSupported = true;return true;
+    }
+  }));
+} catch (err) {} // eslint-disable-line no-empty
+
+var EMPTY_GIF = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+
+function getElementOffset(el) {
+  var rect = el.getBoundingClientRect();
+  var docEl = document.documentElement;
+
+  var rectTop = rect.top + window.pageYOffset - docEl.clientTop;
+  var rectLeft = rect.left + window.pageXOffset - docEl.clientLeft;
+
+  return {
+    top: rectTop,
+    left: rectLeft
+  };
+}
+
+function getClientPos(e) {
+  var pageX = void 0;
+  var pageY = void 0;
+
+  if (e.touches) {
+    pageX = e.touches[0].pageX;
+    pageY = e.touches[0].pageY;
+  } else {
+    pageX = e.pageX;
+    pageY = e.pageY;
+  }
+
+  return {
+    x: pageX,
+    y: pageY
+  };
+}
+
+function clamp(num, min, max) {
+  return Math.min(Math.max(num, min), max);
+}
+
+function isCropValid(crop) {
+  return crop && crop.width && crop.height;
+}
+
+function inverseOrd(ord) {
+  var inversedOrd = void 0;
+
+  if (ord === 'n') inversedOrd = 's';else if (ord === 'ne') inversedOrd = 'sw';else if (ord === 'e') inversedOrd = 'w';else if (ord === 'se') inversedOrd = 'nw';else if (ord === 's') inversedOrd = 'n';else if (ord === 'sw') inversedOrd = 'ne';else if (ord === 'w') inversedOrd = 'e';else if (ord === 'nw') inversedOrd = 'se';
+
+  return inversedOrd;
+}
+
+function makeAspectCrop(crop, imageAspect) {
+  if (isNaN(crop.aspect) || isNaN(imageAspect)) {
+    console.warn('`crop.aspect` and `imageAspect` need to be numbers in order to make an aspect crop', crop);
+    return crop;
+  }
+
+  var completeCrop = _extends({}, crop);
+
+  if (crop.width) {
+    completeCrop.height = crop.width / crop.aspect * imageAspect;
+  }
+  if (crop.height) {
+    completeCrop.width = (completeCrop.height || crop.height) * (crop.aspect / imageAspect);
+  }
+
+  if (crop.y + (completeCrop.height || crop.height) > 100) {
+    completeCrop.height = 100 - crop.y;
+    completeCrop.width = completeCrop.height * crop.aspect / imageAspect;
+  }
+
+  if (crop.x + (completeCrop.width || crop.width) > 100) {
+    completeCrop.width = 100 - crop.x;
+    completeCrop.height = completeCrop.width / crop.aspect * imageAspect;
+  }
+
+  return completeCrop;
+}
+
+function resolveCrop(crop, image) {
+  if (crop && crop.aspect && (!crop.width && crop.height || crop.width && !crop.height)) {
+    return makeAspectCrop(crop, image.naturalWidth / image.naturalHeight);
+  }
+
+  return crop;
+}
+
+function getPixelCrop(image, percentCrop) {
+  if (!image || !percentCrop) {
+    return null;
+  }
+
+  var x = Math.round(image.naturalWidth * (percentCrop.x / 100));
+  var y = Math.round(image.naturalHeight * (percentCrop.y / 100));
+  var width = Math.round(image.naturalWidth * (percentCrop.width / 100));
+  var height = Math.round(image.naturalHeight * (percentCrop.height / 100));
+
+  return {
+    x: x,
+    y: y,
+    // Clamp width and height so rounding doesn't cause the crop to exceed bounds.
+    width: clamp(width, 0, image.naturalWidth - x),
+    height: clamp(height, 0, image.naturalHeight - y)
+  };
+}
+
+function containCrop(previousCrop, crop, imageAspect) {
+  var contained = _extends({}, crop);
+
+  // Don't let the crop grow on the opposite side when hitting an x image boundary.
+  var cropXAdjusted = false;
+  if (contained.x + contained.width > 100) {
+    contained.width = crop.width + (100 - (crop.x + crop.width));
+    contained.x = crop.x + (100 - (crop.x + contained.width));
+    cropXAdjusted = true;
+  } else if (contained.x < 0) {
+    contained.width = crop.x + crop.width;
+    contained.x = 0;
+    cropXAdjusted = true;
+  }
+
+  if (cropXAdjusted && crop.aspect) {
+    // Adjust height to the resized width to maintain aspect.
+    contained.height = contained.width / crop.aspect * imageAspect;
+    // If sizing in up direction we need to pin Y at the point it
+    // would be at the boundary.
+    if (previousCrop.y > contained.y) {
+      contained.y = crop.y + (crop.height - contained.height);
+    }
+  }
+
+  // Don't let the crop grow on the opposite side when hitting a y image boundary.
+  var cropYAdjusted = false;
+  if (contained.y + contained.height > 100) {
+    contained.height = crop.height + (100 - (crop.y + crop.height));
+    contained.y = crop.y + (100 - (crop.y + contained.height));
+    cropYAdjusted = true;
+  } else if (contained.y < 0) {
+    contained.height = crop.y + crop.height;
+    contained.y = 0;
+    cropYAdjusted = true;
+  }
+
+  if (cropYAdjusted && crop.aspect) {
+    // Adjust width to the resized height to maintain aspect.
+    contained.width = contained.height * crop.aspect / imageAspect;
+    // If sizing in up direction we need to pin X at the point it
+    // would be at the boundary.
+    if (contained.x < crop.x) {
+      contained.x = crop.x + (crop.width - contained.width);
+    }
+  }
+
+  return contained;
+}
+
+var ReactCrop = function (_PureComponent) {
+  _inherits(ReactCrop, _PureComponent);
+
+  function ReactCrop() {
+    var _ref;
+
+    var _temp, _this, _ret;
+
+    _classCallCheck(this, ReactCrop);
+
+    for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+      args[_key] = arguments[_key];
+    }
+
+    return _ret = (_temp = (_this = _possibleConstructorReturn(this, (_ref = ReactCrop.__proto__ || Object.getPrototypeOf(ReactCrop)).call.apply(_ref, [this].concat(args))), _this), _this.state = {}, _this.onCropMouseTouchDown = function (e) {
+      var _this$props = _this.props,
+          crop = _this$props.crop,
+          disabled = _this$props.disabled;
+
+
+      if (disabled) {
+        return;
+      }
+
+      e.preventDefault(); // Stop drag selection.
+
+      var clientPos = getClientPos(e);
+
+      // Focus for detecting keypress.
+      _this.componentRef.focus({ preventScroll: true });
+
+      var ord = e.target.dataset.ord;
+
+      var xInversed = ord === 'nw' || ord === 'w' || ord === 'sw';
+      var yInversed = ord === 'nw' || ord === 'n' || ord === 'ne';
+
+      var cropOffset = void 0;
+
+      if (crop.aspect) {
+        cropOffset = getElementOffset(_this.cropSelectRef);
+      }
+
+      _this.evData = {
+        clientStartX: clientPos.x,
+        clientStartY: clientPos.y,
+        cropStartWidth: crop.width,
+        cropStartHeight: crop.height,
+        cropStartX: xInversed ? crop.x + crop.width : crop.x,
+        cropStartY: yInversed ? crop.y + crop.height : crop.y,
+        xInversed: xInversed,
+        yInversed: yInversed,
+        xCrossOver: xInversed,
+        yCrossOver: yInversed,
+        startXCrossOver: xInversed,
+        startYCrossOver: yInversed,
+        isResize: e.target !== _this.cropSelectRef,
+        ord: ord,
+        cropOffset: cropOffset
+      };
+
+      _this.mouseDownOnCrop = true;
+      _this.setState({ cropIsActive: true });
+    }, _this.onComponentMouseTouchDown = function (e) {
+      var _this$props2 = _this.props,
+          crop = _this$props2.crop,
+          disabled = _this$props2.disabled,
+          keepSelection = _this$props2.keepSelection,
+          onChange = _this$props2.onChange;
+
+
+      if (e.target !== _this.imageRef) {
+        return;
+      }
+
+      if (disabled || keepSelection && isCropValid(crop)) {
+        return;
+      }
+
+      e.preventDefault(); // Stop drag selection.
+
+      var clientPos = getClientPos(e);
+
+      // Focus for detecting keypress.
+      _this.componentRef.focus({ preventScroll: true });
+
+      var imageOffset = getElementOffset(_this.imageRef);
+      var xPc = (clientPos.x - imageOffset.left) / _this.imageRef.width * 100;
+      var yPc = (clientPos.y - imageOffset.top) / _this.imageRef.height * 100;
+
+      var nextCrop = {
+        aspect: crop ? crop.aspect : undefined,
+        x: xPc,
+        y: yPc,
+        width: 0,
+        height: 0
+      };
+
+      _this.evData = {
+        clientStartX: clientPos.x,
+        clientStartY: clientPos.y,
+        cropStartWidth: nextCrop.width,
+        cropStartHeight: nextCrop.height,
+        cropStartX: nextCrop.x,
+        cropStartY: nextCrop.y,
+        xInversed: false,
+        yInversed: false,
+        xCrossOver: false,
+        yCrossOver: false,
+        startXCrossOver: false,
+        startYCrossOver: false,
+        isResize: true,
+        ord: 'nw'
+      };
+
+      _this.mouseDownOnCrop = true;
+      onChange(nextCrop, getPixelCrop(_this.imageRef, nextCrop));
+      _this.setState({ cropIsActive: true });
+    }, _this.onDocMouseTouchMove = function (e) {
+      var _this$props3 = _this.props,
+          crop = _this$props3.crop,
+          disabled = _this$props3.disabled,
+          onChange = _this$props3.onChange,
+          onDragStart = _this$props3.onDragStart;
+
+
+      onDragStart();
+
+      if (disabled) {
+        return;
+      }
+
+      if (!_this.mouseDownOnCrop) {
+        return;
+      }
+
+      e.preventDefault(); // Stop drag selection.
+
+      var _this2 = _this,
+          evData = _this2.evData;
+
+      var clientPos = getClientPos(e);
+
+      if (evData.isResize && crop.aspect && evData.cropOffset) {
+        clientPos.y = _this.straightenYPath(clientPos.x);
+      }
+
+      var xDiffPx = clientPos.x - evData.clientStartX;
+      evData.xDiffPc = xDiffPx / _this.imageRef.width * 100;
+
+      var yDiffPx = clientPos.y - evData.clientStartY;
+      evData.yDiffPc = yDiffPx / _this.imageRef.height * 100;
+
+      var nextCrop = void 0;
+
+      if (evData.isResize) {
+        nextCrop = _this.resizeCrop();
+      } else {
+        nextCrop = _this.dragCrop();
+      }
+
+      onChange(nextCrop, getPixelCrop(_this.imageRef, nextCrop));
+    }, _this.onComponentKeyDown = function (e) {
+      var _this$props4 = _this.props,
+          crop = _this$props4.crop,
+          disabled = _this$props4.disabled,
+          onChange = _this$props4.onChange,
+          onComplete = _this$props4.onComplete;
+
+
+      if (disabled) {
+        return;
+      }
+
+      var keyCode = e.which;
+      var nudged = false;
+
+      if (!isCropValid(crop)) {
+        return;
+      }
+
+      var nextCrop = _this.makeNewCrop();
+
+      if (keyCode === ReactCrop.arrowKey.left) {
+        nextCrop.x -= ReactCrop.nudgeStep;
+        nudged = true;
+      } else if (keyCode === ReactCrop.arrowKey.right) {
+        nextCrop.x += ReactCrop.nudgeStep;
+        nudged = true;
+      } else if (keyCode === ReactCrop.arrowKey.up) {
+        nextCrop.y -= ReactCrop.nudgeStep;
+        nudged = true;
+      } else if (keyCode === ReactCrop.arrowKey.down) {
+        nextCrop.y += ReactCrop.nudgeStep;
+        nudged = true;
+      }
+
+      if (nudged) {
+        e.preventDefault(); // Stop drag selection.
+        nextCrop.x = clamp(nextCrop.x, 0, 100 - nextCrop.width);
+        nextCrop.y = clamp(nextCrop.y, 0, 100 - nextCrop.height);
+
+        onChange(nextCrop, getPixelCrop(_this.imageRef, nextCrop));
+        onComplete(nextCrop, getPixelCrop(_this.imageRef, nextCrop));
+      }
+    }, _this.onDocMouseTouchEnd = function () {
+      var _this$props5 = _this.props,
+          crop = _this$props5.crop,
+          disabled = _this$props5.disabled,
+          onComplete = _this$props5.onComplete,
+          onDragEnd = _this$props5.onDragEnd;
+
+
+      onDragEnd();
+
+      if (disabled) {
+        return;
+      }
+
+      if (_this.mouseDownOnCrop) {
+        _this.mouseDownOnCrop = false;
+
+        onComplete(crop, getPixelCrop(_this.imageRef, crop));
+        _this.setState({ cropIsActive: false });
+      }
+    }, _temp), _possibleConstructorReturn(_this, _ret);
+  }
+
+  _createClass(ReactCrop, [{
+    key: 'componentDidMount',
+    value: function componentDidMount() {
+      var options = passiveSupported ? { passive: false } : false;
+
+      document.addEventListener('mousemove', this.onDocMouseTouchMove, options);
+      document.addEventListener('touchmove', this.onDocMouseTouchMove, options);
+
+      document.addEventListener('mouseup', this.onDocMouseTouchEnd, options);
+      document.addEventListener('touchend', this.onDocMouseTouchEnd, options);
+      document.addEventListener('touchcancel', this.onDocMouseTouchEnd, options);
+
+      if (this.imageRef.complete || this.imageRef.readyState) {
+        if (this.imageRef.naturalWidth === 0) {
+          // Broken load on iOS, PR #51
+          // https://css-tricks.com/snippets/jquery/fixing-load-in-ie-for-cached-images/
+          // http://stackoverflow.com/questions/821516/browser-independent-way-to-detect-when-image-has-been-loaded
+          var src = this.imageRef.src;
+
+          this.imageRef.src = EMPTY_GIF;
+          this.imageRef.src = src;
+        } else {
+          this.onImageLoad(this.imageRef);
+        }
+      }
+    }
+  }, {
+    key: 'componentDidUpdate',
+    value: function componentDidUpdate(prevProps) {
+      if (prevProps.crop !== this.props.crop) {
+        this.resolveCropAndTriggerChange(this.props.crop, this.imageRef);
+      }
+    }
+  }, {
+    key: 'componentWillUnmount',
+    value: function componentWillUnmount() {
+      document.removeEventListener('mousemove', this.onDocMouseTouchMove);
+      document.removeEventListener('touchmove', this.onDocMouseTouchMove);
+
+      document.removeEventListener('mouseup', this.onDocMouseTouchEnd);
+      document.removeEventListener('touchend', this.onDocMouseTouchEnd);
+      document.removeEventListener('touchcancel', this.onDocMouseTouchEnd);
+    }
+  }, {
+    key: 'onImageLoad',
+    value: function onImageLoad(image) {
+      var crop = this.resolveCropAndTriggerChange(this.props.crop, image);
+      this.props.onImageLoaded(image, getPixelCrop(image, crop));
+    }
+  }, {
+    key: 'getCropStyle',
+    value: function getCropStyle() {
+      var crop = this.props.crop;
+
+      return {
+        top: crop.y + '%',
+        left: crop.x + '%',
+        width: crop.width + '%',
+        height: crop.height + '%'
+      };
+    }
+  }, {
+    key: 'getNewSize',
+    value: function getNewSize() {
+      var _props = this.props,
+          crop = _props.crop,
+          minWidth = _props.minWidth,
+          maxWidth = _props.maxWidth,
+          minHeight = _props.minHeight,
+          maxHeight = _props.maxHeight;
+      var evData = this.evData;
+
+      var imageAspect = this.imageRef.width / this.imageRef.height;
+
+      // New width.
+      var newWidth = evData.cropStartWidth + evData.xDiffPc;
+
+      if (evData.xCrossOver) {
+        newWidth = Math.abs(newWidth);
+      }
+
+      newWidth = clamp(newWidth, minWidth, maxWidth);
+
+      // New height.
+      var newHeight = void 0;
+
+      if (crop.aspect) {
+        newHeight = newWidth / crop.aspect * imageAspect;
+      } else {
+        newHeight = evData.cropStartHeight + evData.yDiffPc;
+      }
+
+      if (evData.yCrossOver) {
+        // Cap if polarity is inversed and the height fills the y space.
+        newHeight = Math.min(Math.abs(newHeight), evData.cropStartY);
+      }
+
+      newHeight = clamp(newHeight, minHeight, maxHeight);
+
+      if (crop.aspect) {
+        newWidth = clamp(newHeight * crop.aspect / imageAspect, 0, 100);
+      }
+
+      return {
+        width: newWidth,
+        height: newHeight
+      };
+    }
+  }, {
+    key: 'resolveCropAndTriggerChange',
+    value: function resolveCropAndTriggerChange(crop, image) {
+      var resolvedCrop = resolveCrop(crop, image);
+      if (resolvedCrop !== crop) {
+        this.props.onChange(resolvedCrop, getPixelCrop(image, resolvedCrop));
+        this.props.onComplete(resolvedCrop, getPixelCrop(image, resolvedCrop));
+      }
+      return resolvedCrop;
+    }
+  }, {
+    key: 'dragCrop',
+    value: function dragCrop() {
+      var nextCrop = this.makeNewCrop();
+      var evData = this.evData;
+
+      nextCrop.x = clamp(evData.cropStartX + evData.xDiffPc, 0, 100 - nextCrop.width);
+      nextCrop.y = clamp(evData.cropStartY + evData.yDiffPc, 0, 100 - nextCrop.height);
+      return nextCrop;
+    }
+  }, {
+    key: 'resizeCrop',
+    value: function resizeCrop() {
+      var nextCrop = this.makeNewCrop();
+      var evData = this.evData;
+      var ord = evData.ord;
+
+      var imageAspect = this.imageRef.width / this.imageRef.height;
+
+      // On the inverse change the diff so it's the same and
+      // the same algo applies.
+      if (evData.xInversed) {
+        evData.xDiffPc -= evData.cropStartWidth * 2;
+      }
+      if (evData.yInversed) {
+        evData.yDiffPc -= evData.cropStartHeight * 2;
+      }
+
+      // New size.
+      var newSize = this.getNewSize();
+
+      // Adjust x/y to give illusion of 'staticness' as width/height is increased
+      // when polarity is inversed.
+      var newX = evData.cropStartX;
+      var newY = evData.cropStartY;
+
+      if (evData.xCrossOver) {
+        newX = nextCrop.x + (nextCrop.width - newSize.width);
+      }
+
+      if (evData.yCrossOver) {
+        // This not only removes the little "shake" when inverting at a diagonal, but for some
+        // reason y was way off at fast speeds moving sw->ne with fixed aspect only, I couldn't
+        // figure out why.
+        if (evData.lastYCrossover === false) {
+          newY = nextCrop.y - newSize.height;
+        } else {
+          newY = nextCrop.y + (nextCrop.height - newSize.height);
+        }
+      }
+
+      var containedCrop = containCrop(this.props.crop, {
+        x: newX,
+        y: newY,
+        width: newSize.width,
+        height: newSize.height,
+        aspect: nextCrop.aspect
+      }, imageAspect);
+
+      // Apply x/y/width/height changes depending on ordinate (fixed aspect always applies both).
+      if (nextCrop.aspect || ReactCrop.xyOrds.indexOf(ord) > -1) {
+        nextCrop.x = containedCrop.x;
+        nextCrop.y = containedCrop.y;
+        nextCrop.width = containedCrop.width;
+        nextCrop.height = containedCrop.height;
+      } else if (ReactCrop.xOrds.indexOf(ord) > -1) {
+        nextCrop.x = containedCrop.x;
+        nextCrop.width = containedCrop.width;
+      } else if (ReactCrop.yOrds.indexOf(ord) > -1) {
+        nextCrop.y = containedCrop.y;
+        nextCrop.height = containedCrop.height;
+      }
+
+      evData.lastYCrossover = evData.yCrossOver;
+      this.crossOverCheck();
+      return nextCrop;
+    }
+  }, {
+    key: 'straightenYPath',
+    value: function straightenYPath(clientX) {
+      var evData = this.evData;
+      var ord = evData.ord;
+      var cropOffset = evData.cropOffset;
+
+      var cropStartWidth = evData.cropStartWidth / 100 * this.imageRef.width;
+      var cropStartHeight = evData.cropStartHeight / 100 * this.imageRef.height;
+      var k = void 0;
+      var d = void 0;
+
+      if (ord === 'nw' || ord === 'se') {
+        k = cropStartHeight / cropStartWidth;
+        d = cropOffset.top - cropOffset.left * k;
+      } else {
+        k = -cropStartHeight / cropStartWidth;
+        d = cropOffset.top + (cropStartHeight - cropOffset.left * k);
+      }
+
+      return k * clientX + d;
+    }
+  }, {
+    key: 'createCropSelection',
+    value: function createCropSelection() {
+      var _this3 = this;
+
+      var disabled = this.props.disabled;
+
+      var style = this.getCropStyle();
+
+      return _react2.default.createElement(
+        'div',
+        {
+          ref: function ref(n) {
+            _this3.cropSelectRef = n;
+          },
+          style: style,
+          className: 'ReactCrop__crop-selection',
+          onMouseDown: this.onCropMouseTouchDown,
+          onTouchStart: this.onCropMouseTouchDown,
+          role: 'presentation'
+        },
+        !disabled && _react2.default.createElement(
+          'div',
+          { className: 'ReactCrop__drag-elements' },
+          _react2.default.createElement('div', { className: 'ReactCrop__drag-bar ord-n', 'data-ord': 'n' }),
+          _react2.default.createElement('div', { className: 'ReactCrop__drag-bar ord-e', 'data-ord': 'e' }),
+          _react2.default.createElement('div', { className: 'ReactCrop__drag-bar ord-s', 'data-ord': 's' }),
+          _react2.default.createElement('div', { className: 'ReactCrop__drag-bar ord-w', 'data-ord': 'w' }),
+          _react2.default.createElement('div', { className: 'ReactCrop__drag-handle ord-nw', 'data-ord': 'nw' }),
+          _react2.default.createElement('div', { className: 'ReactCrop__drag-handle ord-n', 'data-ord': 'n' }),
+          _react2.default.createElement('div', { className: 'ReactCrop__drag-handle ord-ne', 'data-ord': 'ne' }),
+          _react2.default.createElement('div', { className: 'ReactCrop__drag-handle ord-e', 'data-ord': 'e' }),
+          _react2.default.createElement('div', { className: 'ReactCrop__drag-handle ord-se', 'data-ord': 'se' }),
+          _react2.default.createElement('div', { className: 'ReactCrop__drag-handle ord-s', 'data-ord': 's' }),
+          _react2.default.createElement('div', { className: 'ReactCrop__drag-handle ord-sw', 'data-ord': 'sw' }),
+          _react2.default.createElement('div', { className: 'ReactCrop__drag-handle ord-w', 'data-ord': 'w' })
+        )
+      );
+    }
+  }, {
+    key: 'makeNewCrop',
+    value: function makeNewCrop() {
+      return _extends({}, ReactCrop.defaultCrop, this.props.crop);
+    }
+  }, {
+    key: 'crossOverCheck',
+    value: function crossOverCheck() {
+      var evData = this.evData;
+
+
+      if (!evData.xCrossOver && -Math.abs(evData.cropStartWidth) - evData.xDiffPc >= 0 || evData.xCrossOver && -Math.abs(evData.cropStartWidth) - evData.xDiffPc <= 0) {
+        evData.xCrossOver = !evData.xCrossOver;
+      }
+
+      if (!evData.yCrossOver && -Math.abs(evData.cropStartHeight) - evData.yDiffPc >= 0 || evData.yCrossOver && -Math.abs(evData.cropStartHeight) - evData.yDiffPc <= 0) {
+        evData.yCrossOver = !evData.yCrossOver;
+      }
+
+      var swapXOrd = evData.xCrossOver !== evData.startXCrossOver;
+      var swapYOrd = evData.yCrossOver !== evData.startYCrossOver;
+
+      evData.inversedXOrd = swapXOrd ? inverseOrd(evData.ord) : false;
+      evData.inversedYOrd = swapYOrd ? inverseOrd(evData.ord) : false;
+    }
+  }, {
+    key: 'render',
+    value: function render() {
+      var _this4 = this;
+
+      var _props2 = this.props,
+          children = _props2.children,
+          className = _props2.className,
+          crossorigin = _props2.crossorigin,
+          crop = _props2.crop,
+          disabled = _props2.disabled,
+          imageAlt = _props2.imageAlt,
+          onImageError = _props2.onImageError,
+          src = _props2.src,
+          style = _props2.style,
+          imageStyle = _props2.imageStyle;
+      var cropIsActive = this.state.cropIsActive;
+
+      var cropSelection = void 0;
+
+      if (isCropValid(crop)) {
+        cropSelection = this.createCropSelection();
+      }
+
+      var componentClasses = ['ReactCrop'];
+
+      if (cropIsActive) {
+        componentClasses.push('ReactCrop--active');
+      }
+
+      if (crop) {
+        if (crop.aspect) {
+          componentClasses.push('ReactCrop--fixed-aspect');
+        }
+
+        // In this case we have to shadow the image, since the box-shadow
+        // on the crop won't work.
+        if (cropIsActive && (!crop.width || !crop.height)) {
+          componentClasses.push('ReactCrop--crop-invisible');
+        }
+      }
+
+      if (disabled) {
+        componentClasses.push('ReactCrop--disabled');
+      }
+
+      if (className) {
+        componentClasses.push.apply(componentClasses, _toConsumableArray(className.split(' ')));
+      }
+
+      return _react2.default.createElement(
+        'div',
+        {
+          ref: function ref(n) {
+            _this4.componentRef = n;
+          },
+          className: componentClasses.join(' '),
+          style: style,
+          onTouchStart: this.onComponentMouseTouchDown,
+          onMouseDown: this.onComponentMouseTouchDown,
+          role: 'presentation',
+          tabIndex: '1',
+          onKeyDown: this.onComponentKeyDown
+        },
+        _react2.default.createElement('img', {
+          ref: function ref(n) {
+            _this4.imageRef = n;
+          },
+          crossOrigin: crossorigin,
+          className: 'ReactCrop__image',
+          style: imageStyle,
+          src: src,
+          onLoad: function onLoad(e) {
+            return _this4.onImageLoad(e.target);
+          },
+          onError: onImageError,
+          alt: imageAlt
+        }),
+        cropSelection,
+        children
+      );
+    }
+  }]);
+
+  return ReactCrop;
+}(_react.PureComponent);
+
+ReactCrop.xOrds = ['e', 'w'];
+ReactCrop.yOrds = ['n', 's'];
+ReactCrop.xyOrds = ['nw', 'ne', 'se', 'sw'];
+
+ReactCrop.arrowKey = {
+  left: 37,
+  up: 38,
+  right: 39,
+  down: 40
+};
+
+ReactCrop.nudgeStep = 0.2;
+
+ReactCrop.defaultCrop = {
+  x: 0,
+  y: 0,
+  width: 0,
+  height: 0
+};
+
+ReactCrop.propTypes = {
+  className: _propTypes2.default.string,
+  crossorigin: _propTypes2.default.string,
+  children: _propTypes2.default.oneOfType([_propTypes2.default.arrayOf(_propTypes2.default.node), _propTypes2.default.node]),
+  crop: _propTypes2.default.shape({
+    aspect: _propTypes2.default.number,
+    x: _propTypes2.default.number,
+    y: _propTypes2.default.number,
+    width: _propTypes2.default.number,
+    height: _propTypes2.default.number
+  }),
+  disabled: _propTypes2.default.bool,
+  imageAlt: _propTypes2.default.string,
+  imageStyle: _propTypes2.default.shape({}),
+  keepSelection: _propTypes2.default.bool,
+  minWidth: _propTypes2.default.number,
+  minHeight: _propTypes2.default.number,
+  maxWidth: _propTypes2.default.number,
+  maxHeight: _propTypes2.default.number,
+  onChange: _propTypes2.default.func.isRequired,
+  onImageError: _propTypes2.default.func,
+  onComplete: _propTypes2.default.func,
+  onImageLoaded: _propTypes2.default.func,
+  onDragStart: _propTypes2.default.func,
+  onDragEnd: _propTypes2.default.func,
+  src: _propTypes2.default.string.isRequired,
+  style: _propTypes2.default.shape({})
+};
+
+ReactCrop.defaultProps = {
+  className: undefined,
+  crop: undefined,
+  crossorigin: undefined,
+  disabled: false,
+  imageAlt: '',
+  maxWidth: 100,
+  maxHeight: 100,
+  minWidth: 0,
+  minHeight: 0,
+  keepSelection: false,
+  onComplete: function onComplete() {},
+  onImageError: function onImageError() {},
+  onImageLoaded: function onImageLoaded() {},
+  onDragStart: function onDragStart() {},
+  onDragEnd: function onDragEnd() {},
+  children: undefined,
+  style: undefined,
+  imageStyle: undefined
+};
+
+exports.default = ReactCrop;
+exports.Component = ReactCrop;
+exports.getPixelCrop = getPixelCrop;
+exports.makeAspectCrop = makeAspectCrop;
+exports.containCrop = containCrop;
+
+/***/ }),
+/* 3 */
+/***/ (function(module, exports) {
+
+module.exports = __WEBPACK_EXTERNAL_MODULE_3__;
+
+/***/ }),
+/* 4 */
+/***/ (function(module, exports, __webpack_require__) {
+
+/* WEBPACK VAR INJECTION */(function(process) {/**
+ * Copyright (c) 2013-present, Facebook, Inc.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+if (process.env.NODE_ENV !== 'production') {
+  var REACT_ELEMENT_TYPE = (typeof Symbol === 'function' &&
+    Symbol.for &&
+    Symbol.for('react.element')) ||
+    0xeac7;
+
+  var isValidElement = function(object) {
+    return typeof object === 'object' &&
+      object !== null &&
+      object.$$typeof === REACT_ELEMENT_TYPE;
+  };
+
+  // By explicitly using `prop-types` you are opting into new development behavior.
+  // http://fb.me/prop-types-in-prod
+  var throwOnDirectAccess = true;
+  module.exports = __webpack_require__(5)(isValidElement, throwOnDirectAccess);
+} else {
+  // By explicitly using `prop-types` you are opting into new production behavior.
+  // http://fb.me/prop-types-in-prod
+  module.exports = __webpack_require__(8)();
+}
+
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(0)))
+
+/***/ }),
+/* 5 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/* WEBPACK VAR INJECTION */(function(process) {/**
+ * Copyright (c) 2013-present, Facebook, Inc.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+
+
+var assign = __webpack_require__(6);
+
+var ReactPropTypesSecret = __webpack_require__(1);
+var checkPropTypes = __webpack_require__(7);
+
+var printWarning = function() {};
+
+if (process.env.NODE_ENV !== 'production') {
+  printWarning = function(text) {
+    var message = 'Warning: ' + text;
+    if (typeof console !== 'undefined') {
+      console.error(message);
+    }
+    try {
+      // --- Welcome to debugging React ---
+      // This error was thrown as a convenience so that you can use this stack
+      // to find the callsite that caused this warning to fire.
+      throw new Error(message);
+    } catch (x) {}
+  };
+}
+
+function emptyFunctionThatReturnsNull() {
+  return null;
+}
+
+module.exports = function(isValidElement, throwOnDirectAccess) {
+  /* global Symbol */
+  var ITERATOR_SYMBOL = typeof Symbol === 'function' && Symbol.iterator;
+  var FAUX_ITERATOR_SYMBOL = '@@iterator'; // Before Symbol spec.
+
+  /**
+   * Returns the iterator method function contained on the iterable object.
+   *
+   * Be sure to invoke the function with the iterable as context:
+   *
+   *     var iteratorFn = getIteratorFn(myIterable);
+   *     if (iteratorFn) {
+   *       var iterator = iteratorFn.call(myIterable);
+   *       ...
+   *     }
+   *
+   * @param {?object} maybeIterable
+   * @return {?function}
+   */
+  function getIteratorFn(maybeIterable) {
+    var iteratorFn = maybeIterable && (ITERATOR_SYMBOL && maybeIterable[ITERATOR_SYMBOL] || maybeIterable[FAUX_ITERATOR_SYMBOL]);
+    if (typeof iteratorFn === 'function') {
+      return iteratorFn;
+    }
+  }
+
+  /**
+   * Collection of methods that allow declaration and validation of props that are
+   * supplied to React components. Example usage:
+   *
+   *   var Props = require('ReactPropTypes');
+   *   var MyArticle = React.createClass({
+   *     propTypes: {
+   *       // An optional string prop named "description".
+   *       description: Props.string,
+   *
+   *       // A required enum prop named "category".
+   *       category: Props.oneOf(['News','Photos']).isRequired,
+   *
+   *       // A prop named "dialog" that requires an instance of Dialog.
+   *       dialog: Props.instanceOf(Dialog).isRequired
+   *     },
+   *     render: function() { ... }
+   *   });
+   *
+   * A more formal specification of how these methods are used:
+   *
+   *   type := array|bool|func|object|number|string|oneOf([...])|instanceOf(...)
+   *   decl := ReactPropTypes.{type}(.isRequired)?
+   *
+   * Each and every declaration produces a function with the same signature. This
+   * allows the creation of custom validation functions. For example:
+   *
+   *  var MyLink = React.createClass({
+   *    propTypes: {
+   *      // An optional string or URI prop named "href".
+   *      href: function(props, propName, componentName) {
+   *        var propValue = props[propName];
+   *        if (propValue != null && typeof propValue !== 'string' &&
+   *            !(propValue instanceof URI)) {
+   *          return new Error(
+   *            'Expected a string or an URI for ' + propName + ' in ' +
+   *            componentName
+   *          );
+   *        }
+   *      }
+   *    },
+   *    render: function() {...}
+   *  });
+   *
+   * @internal
+   */
+
+  var ANONYMOUS = '<<anonymous>>';
+
+  // Important!
+  // Keep this list in sync with production version in `./factoryWithThrowingShims.js`.
+  var ReactPropTypes = {
+    array: createPrimitiveTypeChecker('array'),
+    bool: createPrimitiveTypeChecker('boolean'),
+    func: createPrimitiveTypeChecker('function'),
+    number: createPrimitiveTypeChecker('number'),
+    object: createPrimitiveTypeChecker('object'),
+    string: createPrimitiveTypeChecker('string'),
+    symbol: createPrimitiveTypeChecker('symbol'),
+
+    any: createAnyTypeChecker(),
+    arrayOf: createArrayOfTypeChecker,
+    element: createElementTypeChecker(),
+    instanceOf: createInstanceTypeChecker,
+    node: createNodeChecker(),
+    objectOf: createObjectOfTypeChecker,
+    oneOf: createEnumTypeChecker,
+    oneOfType: createUnionTypeChecker,
+    shape: createShapeTypeChecker,
+    exact: createStrictShapeTypeChecker,
+  };
+
+  /**
+   * inlined Object.is polyfill to avoid requiring consumers ship their own
+   * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/is
+   */
+  /*eslint-disable no-self-compare*/
+  function is(x, y) {
+    // SameValue algorithm
+    if (x === y) {
+      // Steps 1-5, 7-10
+      // Steps 6.b-6.e: +0 != -0
+      return x !== 0 || 1 / x === 1 / y;
+    } else {
+      // Step 6.a: NaN == NaN
+      return x !== x && y !== y;
+    }
+  }
+  /*eslint-enable no-self-compare*/
+
+  /**
+   * We use an Error-like object for backward compatibility as people may call
+   * PropTypes directly and inspect their output. However, we don't use real
+   * Errors anymore. We don't inspect their stack anyway, and creating them
+   * is prohibitively expensive if they are created too often, such as what
+   * happens in oneOfType() for any type before the one that matched.
+   */
+  function PropTypeError(message) {
+    this.message = message;
+    this.stack = '';
+  }
+  // Make `instanceof Error` still work for returned errors.
+  PropTypeError.prototype = Error.prototype;
+
+  function createChainableTypeChecker(validate) {
+    if (process.env.NODE_ENV !== 'production') {
+      var manualPropTypeCallCache = {};
+      var manualPropTypeWarningCount = 0;
+    }
+    function checkType(isRequired, props, propName, componentName, location, propFullName, secret) {
+      componentName = componentName || ANONYMOUS;
+      propFullName = propFullName || propName;
+
+      if (secret !== ReactPropTypesSecret) {
+        if (throwOnDirectAccess) {
+          // New behavior only for users of `prop-types` package
+          var err = new Error(
+            'Calling PropTypes validators directly is not supported by the `prop-types` package. ' +
+            'Use `PropTypes.checkPropTypes()` to call them. ' +
+            'Read more at http://fb.me/use-check-prop-types'
+          );
+          err.name = 'Invariant Violation';
+          throw err;
+        } else if (process.env.NODE_ENV !== 'production' && typeof console !== 'undefined') {
+          // Old behavior for people using React.PropTypes
+          var cacheKey = componentName + ':' + propName;
+          if (
+            !manualPropTypeCallCache[cacheKey] &&
+            // Avoid spamming the console because they are often not actionable except for lib authors
+            manualPropTypeWarningCount < 3
+          ) {
+            printWarning(
+              'You are manually calling a React.PropTypes validation ' +
+              'function for the `' + propFullName + '` prop on `' + componentName  + '`. This is deprecated ' +
+              'and will throw in the standalone `prop-types` package. ' +
+              'You may be seeing this warning due to a third-party PropTypes ' +
+              'library. See https://fb.me/react-warning-dont-call-proptypes ' + 'for details.'
+            );
+            manualPropTypeCallCache[cacheKey] = true;
+            manualPropTypeWarningCount++;
+          }
+        }
+      }
+      if (props[propName] == null) {
+        if (isRequired) {
+          if (props[propName] === null) {
+            return new PropTypeError('The ' + location + ' `' + propFullName + '` is marked as required ' + ('in `' + componentName + '`, but its value is `null`.'));
+          }
+          return new PropTypeError('The ' + location + ' `' + propFullName + '` is marked as required in ' + ('`' + componentName + '`, but its value is `undefined`.'));
+        }
+        return null;
+      } else {
+        return validate(props, propName, componentName, location, propFullName);
+      }
+    }
+
+    var chainedCheckType = checkType.bind(null, false);
+    chainedCheckType.isRequired = checkType.bind(null, true);
+
+    return chainedCheckType;
+  }
+
+  function createPrimitiveTypeChecker(expectedType) {
+    function validate(props, propName, componentName, location, propFullName, secret) {
+      var propValue = props[propName];
+      var propType = getPropType(propValue);
+      if (propType !== expectedType) {
+        // `propValue` being instance of, say, date/regexp, pass the 'object'
+        // check, but we can offer a more precise error message here rather than
+        // 'of type `object`'.
+        var preciseType = getPreciseType(propValue);
+
+        return new PropTypeError('Invalid ' + location + ' `' + propFullName + '` of type ' + ('`' + preciseType + '` supplied to `' + componentName + '`, expected ') + ('`' + expectedType + '`.'));
+      }
+      return null;
+    }
+    return createChainableTypeChecker(validate);
+  }
+
+  function createAnyTypeChecker() {
+    return createChainableTypeChecker(emptyFunctionThatReturnsNull);
+  }
+
+  function createArrayOfTypeChecker(typeChecker) {
+    function validate(props, propName, componentName, location, propFullName) {
+      if (typeof typeChecker !== 'function') {
+        return new PropTypeError('Property `' + propFullName + '` of component `' + componentName + '` has invalid PropType notation inside arrayOf.');
+      }
+      var propValue = props[propName];
+      if (!Array.isArray(propValue)) {
+        var propType = getPropType(propValue);
+        return new PropTypeError('Invalid ' + location + ' `' + propFullName + '` of type ' + ('`' + propType + '` supplied to `' + componentName + '`, expected an array.'));
+      }
+      for (var i = 0; i < propValue.length; i++) {
+        var error = typeChecker(propValue, i, componentName, location, propFullName + '[' + i + ']', ReactPropTypesSecret);
+        if (error instanceof Error) {
+          return error;
+        }
+      }
+      return null;
+    }
+    return createChainableTypeChecker(validate);
+  }
+
+  function createElementTypeChecker() {
+    function validate(props, propName, componentName, location, propFullName) {
+      var propValue = props[propName];
+      if (!isValidElement(propValue)) {
+        var propType = getPropType(propValue);
+        return new PropTypeError('Invalid ' + location + ' `' + propFullName + '` of type ' + ('`' + propType + '` supplied to `' + componentName + '`, expected a single ReactElement.'));
+      }
+      return null;
+    }
+    return createChainableTypeChecker(validate);
+  }
+
+  function createInstanceTypeChecker(expectedClass) {
+    function validate(props, propName, componentName, location, propFullName) {
+      if (!(props[propName] instanceof expectedClass)) {
+        var expectedClassName = expectedClass.name || ANONYMOUS;
+        var actualClassName = getClassName(props[propName]);
+        return new PropTypeError('Invalid ' + location + ' `' + propFullName + '` of type ' + ('`' + actualClassName + '` supplied to `' + componentName + '`, expected ') + ('instance of `' + expectedClassName + '`.'));
+      }
+      return null;
+    }
+    return createChainableTypeChecker(validate);
+  }
+
+  function createEnumTypeChecker(expectedValues) {
+    if (!Array.isArray(expectedValues)) {
+      process.env.NODE_ENV !== 'production' ? printWarning('Invalid argument supplied to oneOf, expected an instance of array.') : void 0;
+      return emptyFunctionThatReturnsNull;
+    }
+
+    function validate(props, propName, componentName, location, propFullName) {
+      var propValue = props[propName];
+      for (var i = 0; i < expectedValues.length; i++) {
+        if (is(propValue, expectedValues[i])) {
+          return null;
+        }
+      }
+
+      var valuesString = JSON.stringify(expectedValues);
+      return new PropTypeError('Invalid ' + location + ' `' + propFullName + '` of value `' + propValue + '` ' + ('supplied to `' + componentName + '`, expected one of ' + valuesString + '.'));
+    }
+    return createChainableTypeChecker(validate);
+  }
+
+  function createObjectOfTypeChecker(typeChecker) {
+    function validate(props, propName, componentName, location, propFullName) {
+      if (typeof typeChecker !== 'function') {
+        return new PropTypeError('Property `' + propFullName + '` of component `' + componentName + '` has invalid PropType notation inside objectOf.');
+      }
+      var propValue = props[propName];
+      var propType = getPropType(propValue);
+      if (propType !== 'object') {
+        return new PropTypeError('Invalid ' + location + ' `' + propFullName + '` of type ' + ('`' + propType + '` supplied to `' + componentName + '`, expected an object.'));
+      }
+      for (var key in propValue) {
+        if (propValue.hasOwnProperty(key)) {
+          var error = typeChecker(propValue, key, componentName, location, propFullName + '.' + key, ReactPropTypesSecret);
+          if (error instanceof Error) {
+            return error;
+          }
+        }
+      }
+      return null;
+    }
+    return createChainableTypeChecker(validate);
+  }
+
+  function createUnionTypeChecker(arrayOfTypeCheckers) {
+    if (!Array.isArray(arrayOfTypeCheckers)) {
+      process.env.NODE_ENV !== 'production' ? printWarning('Invalid argument supplied to oneOfType, expected an instance of array.') : void 0;
+      return emptyFunctionThatReturnsNull;
+    }
+
+    for (var i = 0; i < arrayOfTypeCheckers.length; i++) {
+      var checker = arrayOfTypeCheckers[i];
+      if (typeof checker !== 'function') {
+        printWarning(
+          'Invalid argument supplied to oneOfType. Expected an array of check functions, but ' +
+          'received ' + getPostfixForTypeWarning(checker) + ' at index ' + i + '.'
+        );
+        return emptyFunctionThatReturnsNull;
+      }
+    }
+
+    function validate(props, propName, componentName, location, propFullName) {
+      for (var i = 0; i < arrayOfTypeCheckers.length; i++) {
+        var checker = arrayOfTypeCheckers[i];
+        if (checker(props, propName, componentName, location, propFullName, ReactPropTypesSecret) == null) {
+          return null;
+        }
+      }
+
+      return new PropTypeError('Invalid ' + location + ' `' + propFullName + '` supplied to ' + ('`' + componentName + '`.'));
+    }
+    return createChainableTypeChecker(validate);
+  }
+
+  function createNodeChecker() {
+    function validate(props, propName, componentName, location, propFullName) {
+      if (!isNode(props[propName])) {
+        return new PropTypeError('Invalid ' + location + ' `' + propFullName + '` supplied to ' + ('`' + componentName + '`, expected a ReactNode.'));
+      }
+      return null;
+    }
+    return createChainableTypeChecker(validate);
+  }
+
+  function createShapeTypeChecker(shapeTypes) {
+    function validate(props, propName, componentName, location, propFullName) {
+      var propValue = props[propName];
+      var propType = getPropType(propValue);
+      if (propType !== 'object') {
+        return new PropTypeError('Invalid ' + location + ' `' + propFullName + '` of type `' + propType + '` ' + ('supplied to `' + componentName + '`, expected `object`.'));
+      }
+      for (var key in shapeTypes) {
+        var checker = shapeTypes[key];
+        if (!checker) {
+          continue;
+        }
+        var error = checker(propValue, key, componentName, location, propFullName + '.' + key, ReactPropTypesSecret);
+        if (error) {
+          return error;
+        }
+      }
+      return null;
+    }
+    return createChainableTypeChecker(validate);
+  }
+
+  function createStrictShapeTypeChecker(shapeTypes) {
+    function validate(props, propName, componentName, location, propFullName) {
+      var propValue = props[propName];
+      var propType = getPropType(propValue);
+      if (propType !== 'object') {
+        return new PropTypeError('Invalid ' + location + ' `' + propFullName + '` of type `' + propType + '` ' + ('supplied to `' + componentName + '`, expected `object`.'));
+      }
+      // We need to check all keys in case some are required but missing from
+      // props.
+      var allKeys = assign({}, props[propName], shapeTypes);
+      for (var key in allKeys) {
+        var checker = shapeTypes[key];
+        if (!checker) {
+          return new PropTypeError(
+            'Invalid ' + location + ' `' + propFullName + '` key `' + key + '` supplied to `' + componentName + '`.' +
+            '\nBad object: ' + JSON.stringify(props[propName], null, '  ') +
+            '\nValid keys: ' +  JSON.stringify(Object.keys(shapeTypes), null, '  ')
+          );
+        }
+        var error = checker(propValue, key, componentName, location, propFullName + '.' + key, ReactPropTypesSecret);
+        if (error) {
+          return error;
+        }
+      }
+      return null;
+    }
+
+    return createChainableTypeChecker(validate);
+  }
+
+  function isNode(propValue) {
+    switch (typeof propValue) {
+      case 'number':
+      case 'string':
+      case 'undefined':
+        return true;
+      case 'boolean':
+        return !propValue;
+      case 'object':
+        if (Array.isArray(propValue)) {
+          return propValue.every(isNode);
+        }
+        if (propValue === null || isValidElement(propValue)) {
+          return true;
+        }
+
+        var iteratorFn = getIteratorFn(propValue);
+        if (iteratorFn) {
+          var iterator = iteratorFn.call(propValue);
+          var step;
+          if (iteratorFn !== propValue.entries) {
+            while (!(step = iterator.next()).done) {
+              if (!isNode(step.value)) {
+                return false;
+              }
+            }
+          } else {
+            // Iterator will provide entry [k,v] tuples rather than values.
+            while (!(step = iterator.next()).done) {
+              var entry = step.value;
+              if (entry) {
+                if (!isNode(entry[1])) {
+                  return false;
+                }
+              }
+            }
+          }
+        } else {
+          return false;
+        }
+
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  function isSymbol(propType, propValue) {
+    // Native Symbol.
+    if (propType === 'symbol') {
+      return true;
+    }
+
+    // 19.4.3.5 Symbol.prototype[@@toStringTag] === 'Symbol'
+    if (propValue['@@toStringTag'] === 'Symbol') {
+      return true;
+    }
+
+    // Fallback for non-spec compliant Symbols which are polyfilled.
+    if (typeof Symbol === 'function' && propValue instanceof Symbol) {
+      return true;
+    }
+
+    return false;
+  }
+
+  // Equivalent of `typeof` but with special handling for array and regexp.
+  function getPropType(propValue) {
+    var propType = typeof propValue;
+    if (Array.isArray(propValue)) {
+      return 'array';
+    }
+    if (propValue instanceof RegExp) {
+      // Old webkits (at least until Android 4.0) return 'function' rather than
+      // 'object' for typeof a RegExp. We'll normalize this here so that /bla/
+      // passes PropTypes.object.
+      return 'object';
+    }
+    if (isSymbol(propType, propValue)) {
+      return 'symbol';
+    }
+    return propType;
+  }
+
+  // This handles more types than `getPropType`. Only used for error messages.
+  // See `createPrimitiveTypeChecker`.
+  function getPreciseType(propValue) {
+    if (typeof propValue === 'undefined' || propValue === null) {
+      return '' + propValue;
+    }
+    var propType = getPropType(propValue);
+    if (propType === 'object') {
+      if (propValue instanceof Date) {
+        return 'date';
+      } else if (propValue instanceof RegExp) {
+        return 'regexp';
+      }
+    }
+    return propType;
+  }
+
+  // Returns a string that is postfixed to a warning about an invalid type.
+  // For example, "undefined" or "of type array"
+  function getPostfixForTypeWarning(value) {
+    var type = getPreciseType(value);
+    switch (type) {
+      case 'array':
+      case 'object':
+        return 'an ' + type;
+      case 'boolean':
+      case 'date':
+      case 'regexp':
+        return 'a ' + type;
+      default:
+        return type;
+    }
+  }
+
+  // Returns class name of the object, if any.
+  function getClassName(propValue) {
+    if (!propValue.constructor || !propValue.constructor.name) {
+      return ANONYMOUS;
+    }
+    return propValue.constructor.name;
+  }
+
+  ReactPropTypes.checkPropTypes = checkPropTypes;
+  ReactPropTypes.PropTypes = ReactPropTypes;
+
+  return ReactPropTypes;
+};
+
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(0)))
+
+/***/ }),
+/* 6 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/*
+object-assign
+(c) Sindre Sorhus
+@license MIT
+*/
+
+
+/* eslint-disable no-unused-vars */
+var getOwnPropertySymbols = Object.getOwnPropertySymbols;
+var hasOwnProperty = Object.prototype.hasOwnProperty;
+var propIsEnumerable = Object.prototype.propertyIsEnumerable;
+
+function toObject(val) {
+	if (val === null || val === undefined) {
+		throw new TypeError('Object.assign cannot be called with null or undefined');
+	}
+
+	return Object(val);
+}
+
+function shouldUseNative() {
+	try {
+		if (!Object.assign) {
+			return false;
+		}
+
+		// Detect buggy property enumeration order in older V8 versions.
+
+		// https://bugs.chromium.org/p/v8/issues/detail?id=4118
+		var test1 = new String('abc');  // eslint-disable-line no-new-wrappers
+		test1[5] = 'de';
+		if (Object.getOwnPropertyNames(test1)[0] === '5') {
+			return false;
+		}
+
+		// https://bugs.chromium.org/p/v8/issues/detail?id=3056
+		var test2 = {};
+		for (var i = 0; i < 10; i++) {
+			test2['_' + String.fromCharCode(i)] = i;
+		}
+		var order2 = Object.getOwnPropertyNames(test2).map(function (n) {
+			return test2[n];
+		});
+		if (order2.join('') !== '0123456789') {
+			return false;
+		}
+
+		// https://bugs.chromium.org/p/v8/issues/detail?id=3056
+		var test3 = {};
+		'abcdefghijklmnopqrst'.split('').forEach(function (letter) {
+			test3[letter] = letter;
+		});
+		if (Object.keys(Object.assign({}, test3)).join('') !==
+				'abcdefghijklmnopqrst') {
+			return false;
+		}
+
+		return true;
+	} catch (err) {
+		// We don't expect any of the above to throw, but better to be safe.
+		return false;
+	}
+}
+
+module.exports = shouldUseNative() ? Object.assign : function (target, source) {
+	var from;
+	var to = toObject(target);
+	var symbols;
+
+	for (var s = 1; s < arguments.length; s++) {
+		from = Object(arguments[s]);
+
+		for (var key in from) {
+			if (hasOwnProperty.call(from, key)) {
+				to[key] = from[key];
+			}
+		}
+
+		if (getOwnPropertySymbols) {
+			symbols = getOwnPropertySymbols(from);
+			for (var i = 0; i < symbols.length; i++) {
+				if (propIsEnumerable.call(from, symbols[i])) {
+					to[symbols[i]] = from[symbols[i]];
+				}
+			}
+		}
+	}
+
+	return to;
+};
+
+
+/***/ }),
+/* 7 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/* WEBPACK VAR INJECTION */(function(process) {/**
+ * Copyright (c) 2013-present, Facebook, Inc.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+
+
+var printWarning = function() {};
+
+if (process.env.NODE_ENV !== 'production') {
+  var ReactPropTypesSecret = __webpack_require__(1);
+  var loggedTypeFailures = {};
+
+  printWarning = function(text) {
+    var message = 'Warning: ' + text;
+    if (typeof console !== 'undefined') {
+      console.error(message);
+    }
+    try {
+      // --- Welcome to debugging React ---
+      // This error was thrown as a convenience so that you can use this stack
+      // to find the callsite that caused this warning to fire.
+      throw new Error(message);
+    } catch (x) {}
+  };
+}
+
+/**
+ * Assert that the values match with the type specs.
+ * Error messages are memorized and will only be shown once.
+ *
+ * @param {object} typeSpecs Map of name to a ReactPropType
+ * @param {object} values Runtime values that need to be type-checked
+ * @param {string} location e.g. "prop", "context", "child context"
+ * @param {string} componentName Name of the component for error messages.
+ * @param {?Function} getStack Returns the component stack.
+ * @private
+ */
+function checkPropTypes(typeSpecs, values, location, componentName, getStack) {
+  if (process.env.NODE_ENV !== 'production') {
+    for (var typeSpecName in typeSpecs) {
+      if (typeSpecs.hasOwnProperty(typeSpecName)) {
+        var error;
+        // Prop type validation may throw. In case they do, we don't want to
+        // fail the render phase where it didn't fail before. So we log it.
+        // After these have been cleaned up, we'll let them throw.
+        try {
+          // This is intentionally an invariant that gets caught. It's the same
+          // behavior as without this statement except with a better message.
+          if (typeof typeSpecs[typeSpecName] !== 'function') {
+            var err = Error(
+              (componentName || 'React class') + ': ' + location + ' type `' + typeSpecName + '` is invalid; ' +
+              'it must be a function, usually from the `prop-types` package, but received `' + typeof typeSpecs[typeSpecName] + '`.'
+            );
+            err.name = 'Invariant Violation';
+            throw err;
+          }
+          error = typeSpecs[typeSpecName](values, typeSpecName, componentName, location, null, ReactPropTypesSecret);
+        } catch (ex) {
+          error = ex;
+        }
+        if (error && !(error instanceof Error)) {
+          printWarning(
+            (componentName || 'React class') + ': type specification of ' +
+            location + ' `' + typeSpecName + '` is invalid; the type checker ' +
+            'function must return `null` or an `Error` but returned a ' + typeof error + '. ' +
+            'You may have forgotten to pass an argument to the type checker ' +
+            'creator (arrayOf, instanceOf, objectOf, oneOf, oneOfType, and ' +
+            'shape all require an argument).'
+          )
+
+        }
+        if (error instanceof Error && !(error.message in loggedTypeFailures)) {
+          // Only monitor this failure once because there tends to be a lot of the
+          // same error.
+          loggedTypeFailures[error.message] = true;
+
+          var stack = getStack ? getStack() : '';
+
+          printWarning(
+            'Failed ' + location + ' type: ' + error.message + (stack != null ? stack : '')
+          );
+        }
+      }
+    }
+  }
+}
+
+module.exports = checkPropTypes;
+
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(0)))
+
+/***/ }),
+/* 8 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/**
+ * Copyright (c) 2013-present, Facebook, Inc.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+
+
+var ReactPropTypesSecret = __webpack_require__(1);
+
+function emptyFunction() {}
+
+module.exports = function() {
+  function shim(props, propName, componentName, location, propFullName, secret) {
+    if (secret === ReactPropTypesSecret) {
+      // It is still safe when called from React.
+      return;
+    }
+    var err = new Error(
+      'Calling PropTypes validators directly is not supported by the `prop-types` package. ' +
+      'Use PropTypes.checkPropTypes() to call them. ' +
+      'Read more at http://fb.me/use-check-prop-types'
+    );
+    err.name = 'Invariant Violation';
+    throw err;
+  };
+  shim.isRequired = shim;
+  function getShim() {
+    return shim;
+  };
+  // Important!
+  // Keep this list in sync with production version in `./factoryWithTypeCheckers.js`.
+  var ReactPropTypes = {
+    array: shim,
+    bool: shim,
+    func: shim,
+    number: shim,
+    object: shim,
+    string: shim,
+    symbol: shim,
+
+    any: shim,
+    arrayOf: getShim,
+    element: shim,
+    instanceOf: getShim,
+    node: shim,
+    objectOf: getShim,
+    oneOf: getShim,
+    oneOfType: getShim,
+    shape: getShim,
+    exact: getShim
+  };
+
+  ReactPropTypes.checkPropTypes = emptyFunction;
+  ReactPropTypes.PropTypes = ReactPropTypes;
+
+  return ReactPropTypes;
+};
+
+
+/***/ })
+/******/ ]);
+});

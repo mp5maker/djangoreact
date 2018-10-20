@@ -116,7 +116,8 @@ npm install --save-dev axios
 * z-depth-1, z-depth-2, z-depth-3, z-depth-4, z-depth-5 &nbsp; **[Box Shadow]**
 * striped, highlight, centered, responsive-table &nbsp; **[Table]**
 * btn, waves-effect, waves-light **[Button]**
-* .fixed-action-btn>(a.btn-floating.btn-large.red>i)+(ul>li>a.btn-floating) **[Fixed Action Button]** 
+* .fixed-action-btn>(a.btn-floating.btn-large.red>i)+(ul>li>a.btn-floating) **[Fixed Action Button]**
+* .card, .card-image, card-content, card-action, card-title **[Card]**
 
 ### React Setup ###
 *React Requirements*
@@ -126,6 +127,12 @@ npm install --save-dev @babel/preset-env @babel/preset-react
 npm install --save-dev babel-loader prop-types
 npm install --save-dev react react-dom 
 npm install --save-dev webpack webpack-cli webpack-dev-server
+npm install --save react-router
+npm install --save react-router-dom
+npm install --save react-router-native
+npm install --save prop-types
+npm install --save react-dropzone
+npm install --save react-image-crop
 ```
 
 ***

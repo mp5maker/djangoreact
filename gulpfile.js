@@ -13,7 +13,8 @@ gulp.task('css', () => {
 });
 
 librarycss = [
-    "node_modules/font-awesome/css/font-awesome.css"
+    "node_modules/font-awesome/css/font-awesome.css",
+    "node_modules/react-image-crop/dist/ReactCrop.css",
 ];
 
 gulp.task('librarycss', () => {
@@ -38,6 +39,9 @@ libraryjs = [
     "node_modules/react-dom/umd/react-dom.development.js",
     "node_modules/react-router/umd/react-router.js",
     "node_modules/react-router-dom/umd/react-router-dom.js",
+    "node_modules/prop-types/prop-types.js",
+    "node_modules/react-dropzone/dist/index.js",
+    "node_modules/react-image-crop/dist/ReactCrop.js",
 ];
 
 gulp.task('libraryjs', () => {
