@@ -40,7 +40,7 @@ body, html {
 }
 
 // Creating Loops to create font-size classes
-@for $i from 1 through 100 {
+@for $i from 0 through 100 {
     .font-size-#{$i}{
         @include create-fonts($i);
     }
@@ -62,7 +62,7 @@ body, html {
 }
 
 // Creating Loops to create margin classes
-@for $i from 1 through 100 {
+@for $i from 0 through 100 {
     .margin-yaxis-#{$i}{
         @include create-margin($i, 'yaxis');
     }
@@ -97,7 +97,7 @@ body, html {
 }
 
 // Creating Loops to create width and height classes
-@for $i from 1 through 100 {
+@for $i from 0 through 100 {
     .width-#{$i}{
         @include create-width($i*10)
     }

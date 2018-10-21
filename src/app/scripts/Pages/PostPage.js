@@ -1,7 +1,8 @@
 import { Component } from "react"
-import { PostList, PostRetrieve } from "../Post/Post"
+import { PostList, PostRetrieve, PostCollection } from "../Post/Post"
 import SimpleForm from "../Forms/SimpleForm"
 import { MyTextInput, MyTextArea, MySubmitButton } from "../Forms/FormElements"
+import SearchBar from "../Common/SearchBar"
 import ApiHelper from "../Factories/ApiHelper"
 
 class PostListPage extends Component {
@@ -209,4 +210,79 @@ class PostUpdatePage extends Component {
     }
 }
 
-export { PostListPage, PostRetrievePage, PostCreatePage, PostUpdatePage }
+class PostSearchPage extends Component {
+    constructor(props) {
+        super(props)
+        this.state = {
+            search: "",
+            data: [],
+            loading: true,
+            error: false
+        }
+        this.handleOnChange = this.handleOnChange.bind(this)
+    }
+
+    fetchData(data=null) {
+        ApiHelper.getPostDetailSearch(data)
+            .then((response) => {
+                this.setState({
+                    data: response.data,
+                    loading: false,
+                    error: false
+                })
+                console.log(response.data)
+            }).catch((error) => {
+                this.setState({
+                    error: error,
+                    loading: false
+                })
+            })
+    }
+
+    componentDidMount() {
+       this.fetchData()
+    }
+
+    componentDidUpdate(prevProps, prevState) {
+        if (this.state.data !== prevState.data) {
+            this.setState({
+                data: this.state.data,
+                loading: this.state.loading,
+                error: this.state.error
+            })
+        }
+
+        if (this.state.search !== prevState.search) {
+            this.setState({
+                search: this.state.search
+            })
+            this.fetchData(this.state.search)
+        }
+    }
+
+    handleOnChange(event) {
+        this.setState({
+            search: event.target.value
+        })
+    }
+
+    render() {
+        const { data } = this.state
+        return (
+            <div>
+                <div className="row margin-top-0 card-panel grey darken-3">
+                    <div className="col s12">
+                        <SearchBar onChange={this.handleOnChange}/>
+                    </div>
+                </div>
+                <div className={_.isEmpty(data) ? "hidden" : "row margin-top-0 card-panel deep-purple lighten-2"}>
+                    <div className="col s12">
+                        <PostCollection collection={data} />
+                    </div>
+                </div>
+            </div>
+        )
+    }
+}
+
+export { PostListPage, PostRetrievePage, PostCreatePage, PostUpdatePage, PostSearchPage }

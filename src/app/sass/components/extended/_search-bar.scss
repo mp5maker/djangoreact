@@ -1,0 +1,35 @@
+.search-bar {
+    .search-text {
+        width: 0 !important;
+        color: white !important;
+        transition-property: all !important;
+        transition-duration: 0.4s !important;
+    }
+
+    .search-icon {
+        border-radius: 50%;
+        height: 40px;
+        width: 40px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 18px;
+        color: white;
+        border: 1px solid teal; 
+        transition-property: all !important;
+        transition-duration: 0.4s !important;
+    }
+
+    &:hover {
+        transition-property: all !important;
+        transition-duration: 0.4s !important;
+        .search-text {
+            width: 95% !important;
+           
+        }
+        .search-icon {
+            background-color: darken(grey, 30%);
+            color: teal; 
+        }
+    }
+}

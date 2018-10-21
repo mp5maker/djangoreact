@@ -4,7 +4,7 @@ import HomePage from '../Pages/HomePage'
 import AboutPage from '../Pages/AboutPage'
 import ContactPage from '../Pages/ContactPage'
 import ImageUploadPage from '../Pages/ImageUploadPage'
-import { PostListPage, PostRetrievePage, PostCreatePage, PostUpdatePage } from '../Pages/PostPage'
+import { PostListPage, PostRetrievePage, PostCreatePage, PostUpdatePage, PostSearchPage } from '../Pages/PostPage'
 
 class Router extends Component {
     render() {
@@ -19,6 +19,7 @@ class Router extends Component {
                     <Route path='/post-detail/:id' component={PostRetrievePage} />
                     <Route path='/post-create' component={PostCreatePage} />
                     <Route path='/post-update/:id' component={PostUpdatePage} />
+                    <Route path='/post-search/' component={PostSearchPage} />
                 </Switch>
             </BrowserRouter>
         )

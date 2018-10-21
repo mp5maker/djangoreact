@@ -70,6 +70,14 @@ class Sidebar extends Component {
                             </div>
                         </div>
                     </li>
+                    <li>
+                        <div className="card hoverable">
+                            <div className="card-content">
+                                <span className="card-title">Elastic Search</span>
+                                <a href="/post-search/" className="btn pink darken-1 waves-effect waves-light hoverable">Post Search</a>
+                            </div>
+                        </div>
+                    </li>
                 </ul>
             </div>
         )

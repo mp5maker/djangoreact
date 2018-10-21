@@ -152,4 +152,4 @@ class PostDetail extends Component {
         )
     }
 }
-export { PostList, PostRetrieve }
+export { PostList, PostRetrieve, PostCollection }

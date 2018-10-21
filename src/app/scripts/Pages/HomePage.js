@@ -8,11 +8,11 @@ class HomePage extends Component {
     render() {
         return (
             <div>
-                <h4 className="white-text">
-                    <span>
-                        Home
-                    </span>
-                </h4>
+                <div className="row margin-yaxis-24">
+                    <div className="col s12 center-align">
+                        <img src="img-responsive" src="/static/common/win98.png"/>
+                    </div>
+               </div>
             </div>
         )
     }
