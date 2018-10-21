@@ -10,6 +10,8 @@ pip install djangorestframework
 pip install django-filter
 pip install django-rest-auth
 pip install freeze
+pip install elasticsearch-dsl==6.1.0
+pip install django-elasticsearch-dsl
 pip freeze > requirements.txt
 
 mkdir src

@@ -4,6 +4,10 @@ from rest_framework.serializers import (
     SerializerMethodField
 )
 
+from django_elasticsearch_dsl_drf.serializers import (
+    DocumentSerializer
+)
+
 from django.db.models import (
     Q
 )
@@ -14,6 +18,10 @@ from django.contrib.auth.models import (
 
 from .models import (
     Post
+)
+
+from .documents import (
+    PostDocument
 )
 
 class UserSerializer(ModelSerializer):
@@ -57,3 +65,13 @@ class PostSerializer(ModelSerializer):
     
     def get_author(self, obj):
         return str(obj.author.username)
+
+class PostDocumentSerializer(DocumentSerializer):
+ 
+    class Meta:
+        document = PostDocument
+        fields = (
+            'id',
+            'title',
+            'content'
+        )
